@@ -562,7 +562,7 @@ discard
 clear all
 set obs 1000
 gen a = _n
-gen b = runiform
+gen b = runiform()
 gen fe = floor(_n/10)
 areg a b, a(fe)
 ivreg4 a b, a(fe)
