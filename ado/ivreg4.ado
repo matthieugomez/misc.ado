@@ -7,9 +7,6 @@ syntax [anything(name=0)] [if] [in] [aweight/], [Absorb(string) CLuster(varlist)
 Split anything in dependent, exogenous, endogenous, instruments (from ivreg2)
 *****************************************************************************************************/
 
-
-
-
 if "`fe'"~=""{
 	foreach a in `absorb'{
 		cap confirm string variable `a'
@@ -462,7 +459,7 @@ if "`demean'"==""{
 	display as text "{lalign 26:Number of obs = }" in ye %10.0fc `=`N''
 	if "`=`df_m''"~=""{
 		display as text "{lalign 26:Number of effective obs = }" in ye %10.0fc `=`df_r''
-		display as text "{lalign 26:Number of fixed effects = }" in ye %10.0fc `=`df_m''
+		display as text "{lalign 26:Number of groups = }" in ye %10.0fc `=`df_m''
 	}
 
 	if "`fe'"~=""{
