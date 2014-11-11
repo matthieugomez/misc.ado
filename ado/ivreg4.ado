@@ -3,6 +3,8 @@
 ***************************************************************************************************/
 program define ivreg4, eclass
 syntax [anything(name=0)] [if] [in] [aweight/], [Absorb(string) CLuster(varlist) NOCONStant adj print rcommand(string) demean fe core(int 1) save(string) using(string)]
+
+
 /*****************************************************************************************************
 Split anything in dependent, exogenous, endogenous, instruments (from ivreg2)
 *****************************************************************************************************/
@@ -104,9 +106,6 @@ foreach name in `absorb'{
 
 
 
-
-
-
 cap tsunab inexog : `inexog'
 cap tsunab endo : `endo'
 local endo: list endo-absorb_interacted
@@ -154,7 +153,6 @@ marksample touse
 markout `touse' `lhs' `inexog' `exexog' `endo' `absorb_interacted' `absorb_fe' `cluster' `exp', strok
 tempvar id
 qui gen `id'=_n if `touse'==1
-
 
 
 
@@ -311,7 +309,7 @@ else if "`using'"~=""{
 	local Rinput=subinstr(`"`save'"',".csv","")
 }
 if "`using'"==""{
-	qui export delimited  `id' `lhs' `inexog' `exexog' `endo' `absorb_interacted' `absorb_fe' `cluster' `exp' using `Rinput'.csv if `touse'==1, replace    nolabel   
+	qui export delimited  `id' `lhs' `inexog' `exexog' `endo' `absorb_interacted' `absorb_fe' `cluster' `exp' using `Rinput'.csv if `touse'==1, replace  nolabel   
 }
 cap qui erase "`Routput'"
 cap qui erase "`fecsv'.csv"
@@ -321,7 +319,8 @@ file write `rcode' ///
 `"library(data.table)"' _n ///
 `"library(lfe)"' _n ///
 `"options(lfe.threads=`core')"' _n ///
-`"mydata=fread("`Rinput'.csv") "'_n ///
+`"mydata=fread("`Rinput'.csv")"' _n ///
+`"setDF(mydata)"'_n ///
 `factorization' 
 if "`demean'"==""{
 	file write `rcode' ///
@@ -557,4 +556,15 @@ program define IsStop, sclass
 	else	sret local stop 0
 end
 
+
+/* test
+discard
+clear all
+set obs 1000
+gen a = _n
+gen b = runiform
+gen fe = floor(_n/10)
+areg a b, a(fe)
+ivreg4 a b, a(fe)
+ */
 
