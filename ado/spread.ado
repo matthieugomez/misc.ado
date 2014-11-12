@@ -1,5 +1,5 @@
 program define spread
-syntax varlist, [label(varname)]
+syntax varlist, [variable(varname) value(varname) label(varname)]
 
 tokenize `varlist'
 local variable `1'

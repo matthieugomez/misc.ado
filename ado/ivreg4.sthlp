@@ -47,7 +47,7 @@
 {title:Description}
 
 {pstd}
-{cmd:ivreg4} uses the package lfe in R to estimate models with high dimensional fixed effects. The packages lfe and data.table must be installed
+{cmd:append2} append2 does the same thing than append. Only one thing differes: when the type of one variable differs in both datasets, it coerce the variables to strings in both datasets instead of returning an error
 
 
 

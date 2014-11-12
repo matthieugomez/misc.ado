@@ -1,5 +1,5 @@
 program define tagduplicates
-syntax varlist[if] [in], [order(str) gen(str)]
+syntax varlist[if] [in], [GENerate(str)]
 
 tempvar touse 
 mark `touse' `if' `in'
