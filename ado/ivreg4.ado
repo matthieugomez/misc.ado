@@ -2,7 +2,7 @@
 
 ***************************************************************************************************/
 program define ivreg4, eclass
-syntax [anything(name=0)] [if] [in] [aweight/], [Absorb(string) CLuster(varlist) NOCONStant adj print rcommand(string) demean fe core(int 1) save(string) using(string)]
+syntax [anything(name=0)] [if] [in] [aweight/], [Absorb(string) CLuster(varlist) NOCONStant ADJust print rcommand(string) demean fe core(int 1) save(string) using(string)]
 
 
 /*****************************************************************************************************
@@ -188,33 +188,26 @@ tsunab order: `order'
 
 ***************************************************************************************************/
 local count_adj=0
-if "`adj'"~=""{
+if "`adjust'"~=""{
 	foreach a in `absorb'{
 		if regexm("`a'",":"){
 			continue
 		}
-		else{
-			foreach c in `cluster'{
-				local adjust
-				tokenize `cluster'
-				while "adjust"=="" & "`1'"~="" {
-					tempvar ic_ct
-					sort `touse' `absorb' `c' 
-					qui by `touse' `absorb' `c' : gen long `ic_ct' = 1 if _n==_N 
-					sort `touse' `absorb' 
-					qui by `touse' `absorb' : replace `ic_ct'=sum(`ic_ct') 
-					qui count if `ic_ct' > 1 & `ic_ct' < .
-					if r(N)>1 & r(N)<. {
-						local adjust dontadjust
-					}
-				macro shift
-				}
-			}
-			if "adjust"==""{
-				qui distinct `a' if `touse'==1
-				local count_adj=`count_adj'+r(ndistinct)-1
-			}
+		local c : list sizeof cluster
+		if "`c'"!="1"{
+			continue
 		}
+		tempvar ic_ct
+		sort `touse' `absorb' `cluster' 
+		qui by `touse' `absorb' `cluster' : gen long `ic_ct' = 1 if _n==_N 
+		sort `touse' `absorb' 
+		qui by `touse' `absorb' : replace `ic_ct'=sum(`ic_ct') 
+		qui count if `ic_ct' > 1 & `ic_ct' < .
+		if r(N)>1 & r(N)<. {
+			continue
+		}
+		qui distinct `a' if `touse'==1
+		local count_adj=`count_adj'+`=r(ndistinct)'-1	
 	}
 }
 
@@ -326,7 +319,7 @@ if "`demean'"==""{
 	file write `rcode' ///
 	`"a=`model'"' _n ///
 	`"b=summary(a)"' _n ///
-	`"v =a\$vcv"'_n ///
+	`"v =a\$`vcv'"'_n ///
 	`"x=suppressWarnings(cbind(b\$r2,b\$N,b\$df, b\$p,a\$coefficients, v))"'_n ///
 	`"colnames(x)[colnames(x) =="(Intercept)"] <- "intercept" "'_n ///
 	`"colnames(x)[colnames(x) =="Intercept"] <- "intercept" "'_n ///
@@ -439,10 +432,7 @@ if "`demean'"==""{
 	Adjustment of lmfe errors -  http://www.kellogg.northwestern.edu/faculty/matsa/htm/fe.htm.
 	**********************************************************************************************/
 	if `count_adj'~=0{
-			matrix V=(`N'-`df_m')/(`N'-(max(`df_m'-`count_adj',0)))*V
-	}
-	if "`print'"~=""{
-		list *
+			matrix V=(`=`N''-`=`df_m'')/(`=`N''-(max(`=`df_m''-`count_adj',0)))*V
 	}
 	/************************************************************************************************	
 	Finish
@@ -562,9 +552,11 @@ discard
 clear all
 set obs 1000
 gen a = _n
-gen b = runiform()
-gen fe = floor(_n/10)
-areg a b, a(fe)
-ivreg4 a b, a(fe)
+gen fe1 = floor(_n/10)
+gen b = runiform()+fe1
+gen fe2 = floor(runiform()*10)
+areg a b, a(fe1)
+ivreg4 a b, a(fe1)
+ivreg4 a b, a(fe1 fe2)
  */
 
