@@ -1,6 +1,5 @@
-program define egen2
+program define egensort
 syntax [anything(equalok)] [aweight/] [if] [in], [*]
-
 
 if regexm(" `anything'","^(double|float|byte|long| )*([^\=]+)\=([^\(]*)\((.*)\)$"){
 	cap local type `=regexs(1)'
@@ -284,7 +283,7 @@ quietly {
 	if "`missing'"==""{
 		foreach v of varlist `with' {
 			tempvar g`v'
-			egen2 `g`v''=group(`v' `by')
+			egensort `g`v''=group(`v' `by')
 			sum `g`v''
 			replace `g`v''=_n+r(max)  if missing(`g`v'')
 		}
@@ -292,14 +291,14 @@ quietly {
 	else{
 		foreach v of varlist `with' {
 			tempvar g`v'
-			egen2 `g`v''=group(`v' `by'), missing
+			egensort `g`v''=group(`v' `by'), missing
 		}
 	}
 	tempvar temp ttemp
 	tokenize `with'
 	while "`1'"~=""{
 		a2group2, individual(`gen') unit(`g`1'') groupvar(`temp')
-		egen2 `ttemp'=max(`gen'), by(`temp')	
+		egensort `ttemp'=max(`gen'), by(`temp')	
 		drop `gen' `temp'
 		gen `gen'=`ttemp'
 		drop `ttemp'

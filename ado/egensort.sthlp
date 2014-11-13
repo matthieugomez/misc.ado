@@ -1,18 +1,18 @@
 {smcl}
 {* *! version 1.2.14  02feb2013}{...}
-{viewerdialog egen2 "dialog egen2"}{...}
-{vieweralsosee "[D] egen2" "mansection D egen2"}{...}
+{viewerdialog egensort "dialog egensort"}{...}
+{vieweralsosee "[D] egensort" "mansection D egensort"}{...}
 {vieweralsosee "" "--"}{...}
 {vieweralsosee "[D] collapse" "help collapse"}{...}
 {vieweralsosee "[D] generate" "help generate"}{...}
-{viewerjumpto "Syntax" "egen2##syntax"}{...}
-{viewerjumpto "Menu" "egen2##menu"}{...}
-{viewerjumpto "Description" "egen2##description"}{...}
-{viewerjumpto "Examples" "egen2##examples"}{...}
+{viewerjumpto "Syntax" "egensort##syntax"}{...}
+{viewerjumpto "Menu" "egensort##menu"}{...}
+{viewerjumpto "Description" "egensort##description"}{...}
+{viewerjumpto "Examples" "egensort##examples"}{...}
 {title:Title}
 
 {p2colset 5 17 19 2}{...}
-{p2col :{manlink D egen2} {hline 2}}Faster version of {cmd:egen} and {cmd:egenmore} for a restricted set of functions. It has a different set of options and adds the function {it:orgroup}
+{p2col :{manlink D egensort} {hline 2}}Faster version of {cmd:egen} and {cmd:egenmore} for a restricted set of functions. It has a different set of options and adds the function {it:orgroup}
  {p_end}
 {p2colreset}{...}
 
@@ -21,8 +21,8 @@
 {title:Syntax}
 
 {p 8 14 2}
-{cmd:egen2} {dtype} {newvar} {cmd:=} {it:fcn}({it:arguments})   {ifin}
-[{it:{help egen2##weight:weight}}]{cmd:,}
+{cmd:egensort} {dtype} {newvar} {cmd:=} {it:fcn}({it:arguments})   {ifin}
+[{it:{help egensort##weight:weight}}]{cmd:,}
 [{cmd:,} {it:options}]
 
 {phang}
@@ -145,7 +145,7 @@ is always safe.
 {title:Description}
 
 {pstd}
-{cmd:egen2} is coded to be faster than the corresponding {cmd:egen} commands. In particular, {cmd:egen2} does not preserve the initial sorting of the data. Also, precision might be lost unless the type double is used.
+{cmd:egensort} is coded to be faster than the corresponding {cmd:egen} commands. In particular, {cmd:egensort} does not preserve the initial sorting of the data. Also, precision might be lost unless the type double is used.
 
 
 {marker weight}{...} {cmd:aweight}s are allowed for {it:mean} and {it:xtile}.
