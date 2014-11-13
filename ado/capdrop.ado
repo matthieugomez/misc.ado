@@ -22,5 +22,7 @@ local alllist `r(varlist)'
 if `i'~=0{
 	display as text "Variables not found:" in ye "`missinglist'"
 }
-qui drop `newdroplist'
+if "`newdroplist'"~=""{
+    qui drop `newdroplist'
+}
 end
