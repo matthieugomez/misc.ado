@@ -5,7 +5,7 @@
 
 {marker syntax}{...}
 {title:Syntax}
-{cmd:fillall} {cmd:,} {opt id(varlist)} {opt t:ime(varlist)}  {cmd:,[} {opt full}{cmd:]}
+{cmd:fillall} {cmd:,} {opt id(varlist)} {opt t:ime(varlist)}  {cmd:[} {opt full}{cmd:]}
 
 
 {marker description}{...}

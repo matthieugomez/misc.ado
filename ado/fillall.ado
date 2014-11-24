@@ -1,11 +1,10 @@
 program define fillall
 syntax [, id(varlist) Time(varlist) full]
 	tempvar gid gtime
-	egen `gid' = group(`id')
-	egen `gtime' = group(`time')
+	egen `gid' = group(`id'), missing
+	egen `gtime' = group(`time'), missing
 	tsset `gid' `gtime'
 	tsfill, `full'
-	tsset, clear
 	sort `gid' `id'
 	foreach v of varlist `id'{
 		by `gid': replace `v'= `v'[1] if missing(`v')

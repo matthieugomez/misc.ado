@@ -1,24 +1,15 @@
-cap  program drop parsepath
-program define parsepath, rclass
-syntax anything
+program define collapsesum
+	syntax varlist [if] [in] [aweight fweight iweight pweight/] [, BY(varlist) FAST]
 
-local file `0'
-local file: list clean file
+	foreach v of varlist `0'{
+		tempvar `v'_count
+		gen `v'_count = !missing(`v')
+		local vlist `vlist' ``v'_count'
+	}
+	collapse (sum) `0'  `vlist' `exp', `by' `fast'
+	foreach v of varlist `0'{
+		replace `v' = . if ``v'_count' == 0
+	}
 
-if regexm(`"`file'"',`"^(.+)/([^/\.]+)(.*)$"'){
-	local directory = regexs(1)
-	local filename = regexs(2)
-	local filetype= regexs(3)
-}
-else if regexm(`"`file'"',`"^/*([^/\.]+)(.*)$"'){
-	* /filename are understod as c(pwd)
-		local directory `c(pwd)'
-		local filename = regexs(1) 
-		local filetype = regexs(2)
-}
-
-
-return local filetype `filetype'
-return local filename `filename'
-return local directory `directory'/
 end
+
