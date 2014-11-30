@@ -51,7 +51,8 @@ if inlist("`type'", `txttypes') {
 /* Restore original dataset */
 if "`clear'" ~= ""{
     restore
-} else{
+} 
+else{
     drop _all
 }
 end
