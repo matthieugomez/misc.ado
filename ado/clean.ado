@@ -4,43 +4,60 @@ Important not to change since otherwise dummy variable like 0-1 might change. an
 
 
 program clean
-syntax varlist [if] [in], [drop]
-tokenize `varlist' 
-while "`1'"~=""{
-    qui sum `1',d
-    tempname bottom top max min
-    scalar `bottom'=r(p50)-5*(r(p75)-r(p25)) 
-    scalar `top'=r(p50)+5*(r(p75)-r(p25)) 
-    scalar `max'=r(max)
-    scalar `min'=r(min)
+syntax varlist, [drop *]
 
-    qui count if `1'>`top' & `1'~=.
-    if r(N)==0 & `max'==`top'{
-        display as error "Top Quantile equals Maximum. No change"
+foreach v of varlist `varlist'{
+    qui sum `v'
+    scalar max = r(max)
+    scalar min = r(min)
+
+    if "`options'" ~= "" { 
+        _pctile `v', `options'
+        scalar bottom = r(r1)
+        scalar top = r(r2)
     }
     else{
-        display as text "Changes for the top : " in ye r(N)
-
-            if "`drop'"==""{
-                qui replace `1'=`top' if `1'>`top' & `1'~=.
-            }
-            else if "`drop'"~=""{
-                qui replace `1'=. if `1'>`top'
-            }
+        _pctile `v', percentiles(25 50 75)
+        scalar bottom = r(r2) - 5*(r(r3)-r(r1)) 
+        scalar top = r(r2) + 5*(r(r3)-r(r1)) 
     }
-    qui count if `1'<`min' & `1'~=.
-    if r(N)==0 & `min'==`bottom'{
-        display as error "Bottom Quantile equals Minimum. No change"
+
+    if "bottom" == "top" {
+        display as error "bottom limit equals the top limit"
+        exit 4
+    }
+
+   
+
+
+    display as text "Bottom cutoff: `=bottom' "
+    qui count if `v' < min & `v' ~= .
+    if r(N) == 0 & min == bottom{
+        display as tex "Bottom Quantile equals Minimum. No change"
     }
     else{
         display as text "Changes for the bottom : " in ye r(N)
         if "`drop'"==""{
-            qui replace `1'=`bottom' if `1'<`bottom' & `1'~=.
+            qui replace `v' = bottom if `v' < bottom & `v' ~= .
         }
-        else if "`drop'"~=""{
-            qui replace `1'=. if `1'<`bottom'
+        else if "`drop'" ~= ""{
+            qui replace `v' = . if `v' < bottom
         }
     }
-    macro shift 
+
+    display as text "Top cutoff: `=top' "
+    qui count if `v' > top & `v' ~= .
+    if r(N) == 0 & max == top{
+        display as text "Top Quantile equals Maximum. No change"
+    }
+    else{
+        display as text "Changes for the top : " in ye r(N)
+            if "`drop'"==""{
+                qui replace `v' = top if `v' > top & `v' ~= .
+            }
+            else if "`drop'" ~= ""{
+                qui replace `v'=. if `v' > top
+            }
+    }
 }
 end
