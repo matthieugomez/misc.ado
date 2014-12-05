@@ -33,7 +33,7 @@ foreach v of varlist `varlist'{
     display as text "Bottom cutoff: `=bottom' "
     qui count if `v' < min & `v' ~= .
     if r(N) == 0 & min == bottom{
-        display as tex "Bottom Quantile equals Minimum. No change"
+        display as text "Bottom Quantile equals Minimum. No change"
     }
     else{
         display as text "Changes for the bottom : " in ye r(N)
