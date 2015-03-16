@@ -5,42 +5,42 @@ colorbrewer ggplot, n(3)
 bindensity wage , by(race) colors(`"`r(colors)'"')
 ***************************************************************************************************/
 program bindensity 
-syntax varlist [if] [, ///
-by(varname)  Absorb(varlist) ///
-discrete n(integer 20) cut(string) min(string) max(string) boundary ///
-linetype(string) cutline(string) ///
-MSize(string) ///
-Msymbols(string) COLors(string) MColors(string) LColors(string)  *]
+    syntax varlist [if] [, ///
+    by(varname)  Absorb(varlist) ///
+    discrete n(integer 20) cut(string) min(string) max(string) boundary ///
+    linetype(string) cutline(string) ///
+    MSize(string) ///
+    Msymbols(string) COLors(string) MColors(string) LColors(string)  *]
 
 
-qui{
-    if "`msize'" == "" {
-        local msize 1
-        if `n'> 20{
-            local msize = ln(20)/ln(`n')
+    qui{
+        if "`msize'" == "" {
+            local msize 1
+            if `n'> 20{
+                local msize = ln(20)/ln(`n')
+            }
         }
-    }
-    if ("`linetype'"=="" | "`linetype'" == "connect"){
-        local connect connect(1)
-    }
-    else{
-        local connect ""
-    }
-    if `"`colors'"'=="" local colors ///
-    navy maroon forest_green dkorange teal cranberry lavender ///
-    khaki sienna emidblue emerald brown erose gold bluishgray 
-    if `"`mcolors'"'=="" {
-        local mcolors `"`colors'"'
-    }
-    if `"`lcolors'"'=="" {
-        local lcolors `"`colors'"'
-    }
-    local num_mcolor=wordcount(`"`mcolors'"')
-    local num_lcolor=wordcount(`"`lcolors'"')
-    if ("`linetype'"=="connect") local connect "c(l)"
-    if "`msymbols'"!="" {
-        local symbol_prefix "msymbol("
-            local symbol_suffix ")"
+        if ("`linetype'"=="" | "`linetype'" == "connect"){
+            local connect connect(1)
+        }
+        else{
+            local connect ""
+        }
+        if `"`colors'"'=="" local colors ///
+        navy maroon forest_green dkorange teal cranberry lavender ///
+        khaki sienna emidblue emerald brown erose gold bluishgray 
+        if `"`mcolors'"'=="" {
+            local mcolors `"`colors'"'
+        }
+        if `"`lcolors'"'=="" {
+            local lcolors `"`colors'"'
+        }
+        local num_mcolor=wordcount(`"`mcolors'"')
+        local num_lcolor=wordcount(`"`lcolors'"')
+        if ("`linetype'"=="connect") local connect "c(l)"
+        if "`msymbols'"!="" {
+            local symbol_prefix "msymbol("
+                local symbol_suffix ")"
 }
 
 tempvar bin count count_absorb_by_bin count_absorb_by count_absorb count_all g tag touse temp2
@@ -99,20 +99,43 @@ by `touse' `absorb' : gen long `count_absorb' = _N if `touse'== 1
 by `touse' : gen long `count_all' = _N if `touse'== 1
 bys `touse' `by' `bin': gen `count' = sum(1/`count_absorb_by'*`count_absorb'/`count_all') if `touse'==1
 bys `touse' `by' `bin': replace `count' = `count'[_N] if `touse'==1
-egen `g' = group(`by') if `touse' == 1, label
-sum `g'
+
+
 local script ""
-foreach i of numlist 1/`r(max)'{
-    if `"`script'"'~=""{
-        local script `script' ||
+if "`by'"~=""{
+    local bylegend legend(subtitle("`by'"))
+    capture confirm numeric variable `by'
+    if _rc {
+        * by-variable is string => generate a numeric version
+        tempvar by
+        tempname bylabel
+        egen `by'=group(`byvarname'), lname(`bylabel')
     }
+    local bylabel `:value label `by''
+    tempname byvalmatrix
+    qui tab `by' if `touse'==1, nofreq matrow(`byvalmatrix')
+    local bynum=r(r)
+
+    foreach i of numlist 1/`bynum'{
+        if `"`script'"'~=""{
+            local script `script' ||
+        }
+        local scatter_options ///
+        `connect' msize(`msize') ///
+        mcolor("`: word `i' of `mcolors''") lcolor("`: word `i' of `lcolors''") ///
+        `symbol_prefix'`: word `i' of `msymbols''`symbol_suffix' ///
+        legend(label(`i'  `:label `bylabel' `i'')) 
+        local script `script' scatter `count' `bin' if `by' == `=`byvalmatrix'[`i',1]' & `touse' == 1 & `tag' == 1,  `scatter_options' 
+    }
+} 
+else{
     local scatter_options ///
     `connect' msize(`msize') ///
-    mcolor("`: word `i' of `mcolors''") lcolor("`: word `i' of `lcolors''") ///
-    `symbol_prefix'`: word `i' of `msymbols''`symbol_suffix' ///
-    legend(label(`i'  `:label (`g') `i'')) 
-    local script `script' scatter `count' `bin' if `g' == `i' & `touse' == 1 & `tag' == 1,  `scatter_options' 
+    mcolor(`mcolors') lcolor(`lcolors') ///
+    `symbol_prefix'`msymbols'`symbol_suffix' 
+    local script `script' scatter `count' `bin' if  `touse' == 1 & `tag' == 1,  `scatter_options' 
 }
+
 if "`cut'" ~= ""{
     if "`cutline'" == ""{
         local cutline solid
@@ -125,7 +148,8 @@ if "`cut'" ~= ""{
     }
     local xline xline(`cut', lcolor(black) `pattern')
 }
-twoway `script' `options' legend(subtitle("`by'"))  graphregion(fcolor(white)) xtitle(`varlist') ytitle("density") `xline'
+
+twoway `script' `options' `bylegend'  graphregion(fcolor(white)) xtitle(`varlist') ytitle("density") `xline'
 }
 end
 

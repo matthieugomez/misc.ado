@@ -499,8 +499,6 @@ nofastxtile randvar(varname numeric) randcut(real 1) randn(integer -1) * ///
 	local num_mcolor=wordcount(`"`mcolors'"')
 	local num_lcolor=wordcount(`"`lcolors'"')
 
-	noi di `"`mcolors'"'
-	noi di `"`: word 1 of `lcolors''"'
 
 	* Prepare connect & msymbol options
 	if ("`linetype'"=="connect") local connect "c(l)"
