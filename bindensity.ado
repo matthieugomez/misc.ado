@@ -50,10 +50,8 @@ replace `touse' = 0 if missing(`varlist') | missing(`varname') | missing(`absorb
 
 
 if "`discrete'" == ""{
-    tempvar g1
-    egen `g1'=group(`varlist') if `touse' == 1
-    sum `g1'
-    if `=r(max)' > `n'{
+    tab `varlist' if `touse' == 1
+    if `=r(N)' > `n'{
         if "`min'"=="" | "`max'" == "" {
             sum `varlist' if `touse' == 1
         }

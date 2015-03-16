@@ -11,7 +11,7 @@ CONTROLs(varlist numeric ts fv) absorb(varname) noAddmean ///
 LINEtype(string) rd(numlist ascending) reportreg ///
 COLors(string) MColors(string) LColors(string) Msymbols(string) ///
 savegraph(string) savedata(string) replace ///
-nofastxtile randvar(varname numeric) randcut(real 1) randn(integer -1) ///
+nofastxtile randvar(varname numeric) randcut(real 1) randn(integer -1) * ///
 /* LEGACY OPTIONS */ nbins(integer 20) create_xq x_q(varname numeric) symbols(string) method(string) unique(string) ///
 		*]
 
@@ -324,18 +324,6 @@ nofastxtile randvar(varname numeric) randcut(real 1) randn(integer -1) ///
 		if !(`touse_first'==1 & word("`:sortedby'",1)=="`x_r'") sort `touse' `x_r'
 
 		if "`discrete'"=="" { /* xq() and discrete are not specified */
-			tempvar g
-			egen g=group("`bin'")
-			sum `g'
-			if `r(max)' > `nq'{
-				sum `v' if `touse' == 1
-				_pctile `v' if `touse' == 1, percentiles(25 50 75)
-				scalar bottom = max(`=r(min)', r(r2) - 5*(r(r3)-r(r1)) )
-				scalar top = min(`=r(max)', r(r2) + 5*(r(r3)-r(r1)))
-				gen `bin' =  (floor((actual-`r(median)')/(top-bottom)*nq)+(top-bottom)/(2*nq)) *(top-bottom)/nq + `r(median)'
-			}
-
-
 			* Check whether the number of unique values > nquantiles, or <= nquantiles
 			capture mata: characterize_unique_vals_sorted("`x_r'",`touse_first',`touse_last',`nquantiles')
 			
@@ -489,6 +477,8 @@ nofastxtile randvar(varname numeric) randcut(real 1) randn(integer -1) ///
 	navy maroon forest_green dkorange teal cranberry lavender ///
 	khaki sienna emidblue emerald brown erose gold bluishgray ///
 	/* lime magenta cyan pink blue */
+
+	* if there is RGB/HSV color, then
 	if !regexm(`"`colors'"', `"""'){
 		tokenize `colors'
 		local colors ""
