@@ -4,11 +4,10 @@ Important not to change since otherwise dummy variable like 0-1 might change. an
 
 
 program clean, byable(recall)
-    syntax varlist [if] [in], [drop by(varname) *]
+    syntax varlist [if] [in] [aweight fweight pweight], [drop by(varname) *]
 
-
-    tempvar touse
-    gen byte `touse' = 1 `if' `in'
+    if ("`weight'"!="") local wt [`weight'`exp']
+    marksample touse
 
     tempname max min bottom top top2 bottom2
 
@@ -21,7 +20,7 @@ program clean, byable(recall)
         }
         local bylabel `:value label `by''
         tempname byvalmatrix
-        qui tab `by' if `touse'==1, nofreq matrow(`byvalmatrix')
+        qui tab `by' if `touse'== 1, nofreq matrow(`byvalmatrix')
         local bynum=r(r)
     }
     else local bynum 1
@@ -39,12 +38,12 @@ program clean, byable(recall)
             scalar `max' = r(max)
             scalar `min' = r(min)
             if "`options'" ~= "" { 
-                _pctile `v' if `touseby', `options'
+                _pctile `v' `wt' if `touseby', `options'
                 scalar `bottom' = r(r1)
                 scalar `top' = r(r2)
             }
             else{
-                _pctile `v' if `touseby', percentiles(25 50 75)
+                _pctile `v' `wt' if `touseby', percentiles(25 50 75)
                 scalar `bottom' = r(r2) - 5*(r(r3)-r(r1)) 
                 scalar `top' = r(r2) + 5*(r(r3)-r(r1)) 
             }
@@ -54,13 +53,13 @@ program clean, byable(recall)
                 exit 4
             }
 
-            scalar `bottom2' = round(`bottom'*100)/100
-            scalar `top2' = round(`top'*100)/100
+            local bottom2 :  display %12.0g `=`bottom''
+            local top2 : display  %12.0g `=`bottom''
 
 
             qui count if `v' < `bottom' & `v' ~= . & `touseby'
             local nbottom `=r(N)'
-            display as text "Bottom cutoff :  `=`bottom2'' (`nbottom' observation changed)"
+            display as text "Bottom cutoff :  `bottom2' (`nbottom' observation changed)"
 
 
             if "`drop'"==""{
@@ -71,11 +70,9 @@ program clean, byable(recall)
             }
 
 
-
-
             qui count if `v' > `top' & `v' ~= . & `touseby'
             local ntop `=r(N)'
-            display as text "Top cutoff :  `=`top2'' (`ntop' observation changed)"
+            display as text "Top cutoff :  `top2' (`ntop' observation changed)"
 
             if "`drop'"==""{
                 qui replace `v' = `top' if `v' > `top' & `v' ~= . & `touseby'

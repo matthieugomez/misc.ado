@@ -3,16 +3,17 @@ binscatter2 wage age, by(race) colors(`""222 235 247" "158 202 225" "049 130 189
 ***************************************************************************************************/
 
 program define binscatter2, eclass sortpreserve
-version 12.1
+	version 12.1
 
-syntax varlist(min=2 numeric) [if] [in] [aweight fweight], [by(varname) ///
-Nquantiles(integer 20) GENxq(name) discrete xq(varname numeric) MEDians ///
-CONTROLs(varlist numeric ts fv) absorb(varname) noAddmean ///
-LINEtype(string) rd(numlist ascending) reportreg ///
-COLors(string) MColors(string) LColors(string) Msymbols(string) ///
-savegraph(string) savedata(string) replace ///
-nofastxtile randvar(varname numeric) randcut(real 1) randn(integer -1) * ///
-/* LEGACY OPTIONS */ nbins(integer 20) create_xq x_q(varname numeric) symbols(string) method(string) unique(string) ///
+	syntax varlist(min=2 numeric) [if] [in] [aweight fweight], [by(varname) ///
+	Nquantiles(integer 20) GENxq(name) discrete xq(varname numeric) MEDians ///
+	CONTROLs(varlist numeric ts fv) absorb(varname) noAddmean ///
+	LINEtype(string) rd(numlist ascending) reportreg ///
+	COLors(string) MColors(string) LColors(string) Msymbols(string) ///
+	MLabel(string) ///
+	savegraph(string) savedata(string) replace ///
+	nofastxtile randvar(varname numeric) randcut(real 1) randn(integer -1) * ///
+	/* LEGACY OPTIONS */ nbins(integer 20) create_xq x_q(varname numeric) symbols(string) method(string) unique(string) ///
 		*]
 
 		set more off
@@ -122,6 +123,18 @@ nofastxtile randvar(varname numeric) randcut(real 1) randn(integer -1) * ///
 		}
 	}
 
+	if "`mlabel'" ~= "" {
+		if "`xq'" == "" & "`discrete'" == ""{
+			di as error "Specify the option discrete or xq() when using mlabel"
+			exit
+		}
+		if !regexm(`"`mlabel'"', "mlabcolor\("){
+			local mlabel `mlabel' mlabcolor(black)
+		}
+	}
+
+
+
 	* Mark sample (reflects the if/in conditions, and includes only nonmissing observations)
 	marksample touse
 	markout `touse' `by' `xq' `controls' `absorb', strok
@@ -129,6 +142,11 @@ nofastxtile randvar(varname numeric) randcut(real 1) randn(integer -1) * ///
 	local samplesize=r(N)
 	local touse_first=_N-`samplesize'+1
 	local touse_last=_N
+
+	if `samplesize' == 0{
+		display as error "no observations" 
+		exit 2000
+	}
 
 	* Parse varlist into y-vars and x-var
 	local x_var=word("`varlist'",-1)
@@ -548,19 +566,26 @@ nofastxtile randvar(varname numeric) randcut(real 1) randn(integer -1) * ///
 					}
 
 					while (`xval'!=. & `yval'!=.) {
-						local scatters `scatters' `yval' `xval'
-
+						if "`mlabel'" ~= ""{
+							local scatters `scatters' `yval' `xval' "`:label (`xq') `=`row'''"
+						}
+						else{
+							local scatters `scatters' `yval' `xval' 
+						}
 						local ++row
 						local xval=`y`counter_depvar'_scatterpts'[`row',`xind']
 						local yval=`y`counter_depvar'_scatterpts'[`row',`yind']
 					}
 
+
+
 					* Add options
-					local scatter_options `connect' mcolor("`: word `c' of `mcolors''") lcolor("`: word `c' of `lcolors''") `symbol_prefix'`: word `c' of `msymbols''`symbol_suffix'
+					local scatter_options `connect' mcolor("`: word `c' of `mcolors''") lcolor("`: word `c' of `lcolors''") `symbol_prefix'`: word `c' of `msymbols''`symbol_suffix' `mlabel'
 					local scatters `scatters', `scatter_options')
 							if ("`savedata'"!="") local savedata_scatters `savedata_scatters', `scatter_options')
 
-
+					* stop mlab after doing it once
+					local mlabel ""
 * Add legend
 if "`by'"=="" {
 	if (`ynum'==1) local legend_labels off
@@ -572,8 +597,10 @@ else {
 		local byvalname `: label `bylabel' `byval''
 	}
 
-	if (`ynum'==1) local legend_labels `legend_labels' lab(`counter_series' `byvarname'=`byvalname')
-	else local legend_labels `legend_labels' lab(`counter_series' `depvar': `byvarname'=`byvalname')
+	
+	if (`ynum'==1) local legend_labels `legend_labels' lab(`counter_series' `byvalname')
+	else local legend_labels `legend_labels' lab(`counter_series' `depvar': `byvalname')
+	local bylegend legend(subtitle("`byvarname'"))
 }
 if ("`by'"!="" | `ynum'>1) local order `order' `counter_series'
 
@@ -650,13 +677,24 @@ if inlist(`"`linetype'"',"lfit","qfit") {
 	}
 }
 
-* Prepare y-axis title
-if (`ynum'==1) local ytitle `y_vars'
+* Prepare x-xis and y-axis title
+local xtitle `: var label `x_var''
+if "`xtitle'"==""{
+	local xtitle `x_var'
+}
+
+
+if (`ynum'==1){
+	local ytitle `: var label `y_vars''
+	if "`ytitle'"==""{
+		local ytitle `y_vars'
+	}
+}
 else if (`ynum'==2) local ytitle : subinstr local y_vars " " " and "
 else local ytitle : subinstr local y_vars " " "; ", all
 
 * Display graph
-local graphcmd twoway `scatters' `fits', graphregion(fcolor(white)) `xlines' xtitle(`x_var') ytitle(`ytitle') legend(`legend_labels' order(`order')) `options'
+local graphcmd twoway `scatters' `fits', graphregion(fcolor(white)) `xlines' xtitle(`xtitle') ytitle(`ytitle') legend(`legend_labels' order(`order')) `bylegend' `options'
 if ("`savedata'"!="") local savedata_graphcmd twoway `savedata_scatters' `fits', graphregion(fcolor(white)) `xlines' xtitle(`x_var') ytitle(`ytitle') legend(`legend_labels' order(`order')) `options'
 `graphcmd'
 
@@ -800,9 +838,9 @@ end
 * Helper programs
 
 program define means_in_boundaries, rclass
-version 12.1
+	version 12.1
 
-syntax varname(numeric) [aweight fweight], BOUNDsmat(name) [MEDians]
+	syntax varname(numeric) [aweight fweight], BOUNDsmat(name) [MEDians]
 
 * Create convenient weight local
 if ("`weight'"!="") local wt [`weight'`exp']
@@ -830,7 +868,7 @@ end
 
 *** copy of: version 1.21  8oct2013  Michael Stepner, stepner@mit.edu
 program define fastxtile, rclass
-version 11
+	version 11
 
 * Parse weights, if any
 _parsewt "aweight fweight pweight" `0' 
@@ -846,6 +884,7 @@ marksample touse, novarlist
 markout `touse' `exp'
 qui count if `touse'
 local popsize=r(N)
+
 
 if "`cutpoints'"=="" & "`cutvalues'"=="" { /***** NQUANTILES *****/
 	if `"`wt'"'!="" & "`altdef'"!="" {
@@ -904,6 +943,7 @@ if "`cutpoints'"=="" & "`cutvalues'"=="" { /***** NQUANTILES *****/
 		* Error checks
 		qui count if `randsample'
 		local samplesize=r(N)
+
 		if (`nquantiles' > r(N) + 1) {
 			if ("`randvar'"=="") di as error "nquantiles() must be less than or equal to the number of observations [`r(N)'] plus one"
 			else di as error "nquantiles() must be less than or equal to the number of sampled observations [`r(N)'] plus one"
