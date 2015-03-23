@@ -14,12 +14,12 @@ program stat, rclass
             gen byte `touse' = 1 `if' `in'
             qui count if `touse' == 1
             local Ntotal = r(N)
-            sum `v' if `touse'==1 `wt', `d'
             tempname Nm Nmm
+            sum `v' if `touse'==1 `wt', `d'
             scalar `Nm' = `Ntotal'-`=r(N)'
-            scalar `Nmm' = 100 * Nm /`Ntotal'
+            scalar `Nmm' = 100 * `Nm' /`Ntotal'
             di _newline as text "Missing  =" in ye %9.0gc `Nm' " (" %3.2fc  `Nmm' "%)"
-            }
+        }
     }
     else{
         if "`by'" ~= ""{
@@ -62,7 +62,7 @@ program stat, rclass
             }
         }
     }
-end
+    end
 
 /***************************************************************************************************
 helper: modified version of tabstat.
@@ -272,7 +272,7 @@ forvalues i = 1/`nvars' {
         }
     }
     if "`pctileopt'" ~= ""{
-        qui _pctile `var`i'' in `by1'/`by2' `wght', _pctile(`pctileopt')
+        qui _pctile `var`i'' in `by1'/`by2' `wght', p(`pctileopt')
         forvalues is = 1/`nstats' {
             if "`cmd`is''" == "pctile"{
                 mat `Stat`iby''[`is',`i'] = `expr`is''
@@ -314,9 +314,29 @@ mat colnames `Stat`iby'' = `varlist'
 mat rownames `Stat`iby'' = `stats'
 
 forvalues i = 1/`nvars' {
-    qui summ `var`i'' if `touse' `wght' , `summopt'
-    forvalues is = 1/`nstats' {
-        mat `Stat`iby''[`is',`i'] = `expr`is''
+    if regexm("`cmd'", "sum") {
+        qui summ `var`i'' if `touse' `wght', `summopt'
+        forvalues is = 1/`nstats' {
+            if "`cmd`is''" == "sum"{
+                if "`name`is''"== "freq"{
+                    mat `Stat`iby''[`is',`i'] = _N
+                }
+                else if  "`name`is''"== "nmissing"{
+                    mat `Stat`iby''[`is',`i'] = _N - `expr`is''
+                }
+                else{
+                    mat `Stat`iby''[`is',`i'] = `expr`is''
+                }
+            }
+        }
+    }
+    if "`pctileopt'" ~= ""{
+        qui _pctile `var`i'' if `touse' `wght', p(`pctileopt')
+        forvalues is = 1/`nstats' {
+            if "`cmd`is''" == "pctile"{
+                mat `Stat`iby''[`is',`i'] = `expr`is''
+            }
+        }
     }
 }
 local lab`iby' "Total"
@@ -591,6 +611,14 @@ if `iblock' < `nvblock' {
 * ---------------------------------------
 
 if "`save'" != "" {
+    if "`by'" == ""{
+        local iby `=`nby' + 1'
+        foreach is of numlist 1/`nstats'{
+            local localname  "`name`is''"
+            return local `localname' `=`Stat`iby''[`is',1]'
+            local listname `listname'  `localname'
+        }
+    }
     forvalues iby = 1/`nby' {
         foreach is of numlist 1/`nstats'{
             local localname  "`name`is''_`byval`iby''"
@@ -629,6 +657,7 @@ program define Stats2, rclass
 * ensure that order of requested statistics is preserved
 * invoke syntax for each word in input
 local class 0
+local nq 0
 foreach st of local opt {
     local 0 = lower(`", `st'"')
 
@@ -737,10 +766,14 @@ if "`q'" != "" {
     continue
 }
 
-local names "`names' `*'"
-local expr "`expr' r(`*')"
-local pctileop "`pctileop' `*'"
-local cmd "`cmd' pctile"
+if regexm("`options'","p[0-9]*"){
+    local quantile `=regexr("`options'", "p", "")'
+    local nq = `nq' + 1
+    local names "`names' `options'"
+    local expr "`expr' r(r`nq')"
+    local pctileopt "`pctileopt' `quantile'"
+    local cmd "`cmd' pctile"
+}
 }
 
 
