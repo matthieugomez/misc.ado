@@ -54,7 +54,7 @@ program clean, byable(recall)
             }
 
             local bottom2 :  display %12.0g `=`bottom''
-            local top2 : display  %12.0g `=`bottom''
+            local top2 : display  %12.0g `=`top''
 
 
             qui count if `v' < `bottom' & `v' ~= . & `touseby'
