@@ -23,6 +23,7 @@ program define binscatter2, eclass sortpreserve
 	
 	***** Begin legacy option compatibility code
 	
+	
 	if (`nbins'!=20) {
 		if (`nquantiles'!=20) {
 			di as error "Cannot specify both nquantiles() and nbins(): both are the same option, nbins is supported only for backward compatibility."
@@ -412,7 +413,8 @@ program define binscatter2, eclass sortpreserve
 		if !(`touse_first'==1 & word("`:sortedby'",1)=="`xq'") sort `touse' `xq'
 		
 		* set nquantiles & boundaries
-		mata: characterize_unique_vals_sorted("`xq'",`touse_first',`touse_last',`=`samplesize'/2')
+
+		mata: characterize_unique_vals_sorted("`xq'",`touse_first',`touse_last',`=max(100,`samplesize'/2)')
 		
 		if (_rc==0) {
 			local nquantiles=r(r)
@@ -423,7 +425,7 @@ program define binscatter2, eclass sortpreserve
 			}
 		}
 		else if (_rc==134) {
-			di as error "discrete specified, but number of unique values is > (sample size/2)"
+			di as error "discrete specified, but number of unique values is > max(100, sample size/2)"
 			exit 134
 		}
 		else {

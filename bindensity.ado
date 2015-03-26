@@ -4,7 +4,7 @@ example with colors:
 colorbrewer ggplot, n(3) 
 bindensity wage , by(race) colors(`"`r(colors)'"')
 ***************************************************************************************************/
-program bindensity, rclass
+program bindensity, rclass sortpreserve
     syntax varlist [if] [, ///
     by(varname)  Absorb(varlist) ///
     discrete Nbin(integer 20) cut(string) min(string) max(string) boundary ///
