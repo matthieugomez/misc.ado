@@ -7,7 +7,7 @@ program define binscatter2, eclass sortpreserve
 
 	syntax varlist(min=2 numeric) [if] [in] [aweight fweight], [by(varname) ///
 	Nquantiles(integer 20) GENxq(name) discrete xq(varname numeric) MEDians ///
-	CONTROLs(varlist numeric ts fv) absorb(varname) noAddmean ///
+	CONTROLs(varlist numeric ts fv) Absorb(varname) noAddmean ///
 	LINEtype(string) rd(numlist ascending) reportreg ///
 	COLors(string) MColors(string) LColors(string) Msymbols(string) ///
 	MLabel(string) ///
