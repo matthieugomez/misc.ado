@@ -2,7 +2,7 @@
 position
 ***************************************************************************************************/
 program define position, rclass 
-	syntax varlist(min=1) [, first(string) last(string) max(string)]
+	syntax varlist [, first(string) last(string) max(string)]
 
 	if "`first'" == ""{
 		local first 1
@@ -13,28 +13,30 @@ program define position, rclass
 	if "`max'" == ""{
 		local max `=_N'
 	}
-	cap confirm numeric variable `varlist'
-	if _rc{
-		mata: scharacterize_unique_vals_sorted("`varlist'",`first',`last', `max')
-		tempname temp1 temp2
-		mat `temp1' = r(boundaries)
-		return matrix boundaries = `temp1'
-		forvalues i = `=`r(r)''(-1)1{
-		    return local r`i' `=r(r`i')'
+	scalar varn `: word count `varlist''
+		cap confirm numeric variable `varlist'
+		if _rc{
+			mata: scharacterize_unique_vals_sorted("`varlist'",`first',`last', `max')
+			tempname temp1 temp2
+			mat `temp1' = r(boundaries)
+			return matrix boundaries = `temp1'
+			forvalues i = `=`r(r)''(-1)1{
+			    return local r`i' `=r(r`i')'
+			}
+			return scalar r = r(r)
 		}
-		return scalar r = r(r)
-	}
-	else{
-		mata: characterize_unique_vals_sorted("`varlist'", `first', `last', `max')
-		tempname temp1 temp2
-		mat `temp1' = r(boundaries)
-		mat `temp2' = r(values)
-		return matrix boundaries = `temp1'
-		forvalues i = `=`r(r)''(-1)1{
-		    return local r`i' `=`temp2'[`i',1]'
+		else{
+			mata: characterize_unique_vals_sorted("`varlist'", `first', `last', `max')
+			tempname temp1 temp2
+			mat `temp1' = r(boundaries)
+			mat `temp2' = r(values)
+			return matrix boundaries = `temp1'
+			forvalues i = `=`r(r)''(-1)1{
+			    return local r`i' `=`temp2'[`i',1]'
+			}
+			return scalar r = r(r)
 		}
-		return scalar r = r(r)
-	}
+
 end
 
 
