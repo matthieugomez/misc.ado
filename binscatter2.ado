@@ -388,7 +388,7 @@ program define binscatter2, eclass sortpreserve
 
 			if ("`controls'`absorb'"!="") di as text "warning: discrete is specified in combination with controls() or absorb(). note that binning takes places after residualization, so the residualized x-variable may contain many more unique values."
 
-			capture mata: characterize_unique_vals_sorted("`x_r'",`touse_first',`touse_last',`=`samplesize'/2')
+			capture mata: characterize_unique_vals_sorted("`x_r'",`touse_first',`touse_last',`=`samplesize'')
 
 			if (_rc==0) {
 				local xq `x_r'
