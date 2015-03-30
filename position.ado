@@ -16,7 +16,7 @@ program define position, rclass
 	scalar varn `: word count `varlist''
 		cap confirm numeric variable `varlist'
 		if _rc{
-			mata: scharacterize_unique_vals_sorted("`varlist'",`first',`last', `max')
+			mata: scharacterize_unique_vals_sorted("`varlist'",`first',`last', 2^16)
 			tempname temp1 temp2
 			mat `temp1' = r(boundaries)
 			return matrix boundaries = `temp1'
@@ -26,7 +26,7 @@ program define position, rclass
 			return scalar r = r(r)
 		}
 		else{
-			mata: characterize_unique_vals_sorted("`varlist'", `first', `last', `max')
+			mata: characterize_unique_vals_sorted("`varlist'", `first', `last', 2^16)
 			tempname temp1 temp2
 			mat `temp1' = r(boundaries)
 			mat `temp2' = r(values)
