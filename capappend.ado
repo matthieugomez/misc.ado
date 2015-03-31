@@ -1,11 +1,11 @@
-program define append2
+program define capappend
 version 8.2
 
 /***************************************************************************************************
 
 ***************************************************************************************************/
-syntax using/ 
-cap append using `"`using'"', *
+syntax using/, *
+cap append using `"`using'"', `options'
 if _rc~=0{
 	cap use `"`using'"'
 	if _rc~=0{
@@ -34,14 +34,15 @@ if _rc~=0{
 			display as result "`v' is numeric in using"
 			tostring `v', replace
 		}
-		save `"`using'"', replace
+		tempfile using2
+		save `"`using2'"', replace
 		restore
 		local inter: list master_numeric & using_string
 		foreach v in `inter'{
 			display as result  "`v' is numeric in master"
 			tostring `v', replace
 		}
-		append using `"`using'"', `*'
+		append using `"`using2'"', `options'
 		
 	}
 }
