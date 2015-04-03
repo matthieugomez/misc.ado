@@ -6,7 +6,7 @@ bindensity wage , by(race) colors(`"`r(colors)'"')
 ***************************************************************************************************/
 program bindensity, rclass sortpreserve
 syntax varlist [if] [in] [aweight fweight] [, ///
-by(varname)  Absorb(varlist) ///
+by(varname)  Absorb(varname) ///
 discrete Nbin(integer 20) cut(string) min(string) max(string) boundary ///
 linetype(string) cutline(string) ///
 MSize(string) count lncount ///
@@ -46,11 +46,29 @@ qui{
             local symbol_suffix ")"
 }
 
-tempvar touse
+marksample touse
+markout `touse'  `by'  `absorb', strok
 
-gen byte `touse' = 1 `if' 
-replace `touse' = 0 if missing(`varlist') | missing(`varname') | missing(`absorb') | missing(`by')
+qui count if `touse'
+local samplesize=r(N)
+local touse_first=_N-`samplesize'+1
+local touse_last=_N
+if `samplesize' == 0 {
+    di as error "no obs" 
+    exit 10
+}
 
+if "`by'"~=""{
+    local bylegend legend(subtitle("`by'"))
+    capture confirm numeric variable `by'
+    if _rc {
+        * by-variable is string => generate a numeric version
+        tempvar byv
+        tempname bylabel
+        egen `byv' = group(`by'), lname(`bylabel')
+        local by `byv'
+    }
+}
 
 if "`discrete'" == ""{
     tempvar bin
@@ -86,9 +104,6 @@ if "`discrete'" == ""{
         replace `touse' = 0 if `varlist' >= `top' | `varlist' <= `bottom'
     }
     tempvar bin2
-
-
-
     replace `bin'= (`bin'+0.5) /`nbin'* (`top'-`bottom') + `bottom' if `touse' == 1
 
     tempname binvalmatrix
@@ -99,15 +114,6 @@ if "`discrete'" == ""{
         return local binvall`i' [`: di %3.2f `=`binvalmatrix'[`i',1]'' `: di %3.2f `=`binvalmatrix'[`i'+1,1]''[
     }
     return local binvall1 < `: di %3.2f `=`binvalmatrix'[2,1]''
-
-
-
-    qui count if `touse'
-    local samplesize=r(N)
-    local touse_first=_N-`samplesize'+1
-    local touse_last=_N
-
-
     /*  
     tempname binmatrix
     tab `bin' if `touse' == 1, nofreq matrow(`binmatrix')
@@ -121,13 +127,15 @@ if "`discrete'" == ""{
         return local binval`i' `=`binminmatrix'[`i',1]' `=`binmaxmatrix'[`i',1]' (`=`binmatrix'[`i',1]')
     }
     */
-
-
 }
 
 else{
     local bin `varlist'
 }
+
+
+
+
 
 if "`absorb'" ~= ""{
     if "`weight'" == ""{
@@ -147,83 +155,79 @@ else{
         local weight2 `weightv'
     }
 }
-tempvar varcount
-bys `touse' `by' `bin': gen `varcount' = sum(`weight2') 
-by `touse' `by' `bin': replace `varcount' = 0 if _n < _N
 
+if !(`touse_first'==1 & word("`:sortedby'",1)=="`by'")  local stouse `touse'
+tempvar varcount
+bys `stouse' `by' `bin': gen `varcount' = sum(`weight2') 
+by `stouse' `by' `bin': replace `varcount' = 0 if _n < _N
 if "`lncount'" ~= ""{
-    by `touse' `by' `bin': replace `varcount' = ln(`varcount') if _n == _N
+    by `stouse' `by' `bin': replace `varcount' = ln(`varcount') if _n == _N
 }
 else if "`count'" == "" {
     tempvar tvarcount
-    by `touse' `by' : gen `tvarcount' = sum(`varcount') 
-    by `touse' `by': replace `varcount' = `varcount'/`tvarcount'[_N]
+    by `stouse' `by' : gen `tvarcount' = sum(`varcount') 
+    by `stouse' `by': replace `varcount' = `varcount'/`tvarcount'[_N]
 }
 
 
-
-
-
-
 local script ""
+
 if "`by'"~=""{
-    local bylegend legend(subtitle("`by'"))
-    capture confirm numeric variable `by'
-    if _rc {
-        * by-variable is string => generate a numeric version
-        tempvar by
-        tempname bylabel
-        egen `by'=group(`byvarname'), lname(`bylabel')
-    }
-    local bylabel `:value label `by''
+
     tempname byvalmatrix
-    qui tab `by' if `touse'==1, nofreq matrow(`byvalmatrix')
+    tempname by_boundaries
+    mata: characterize_unique_vals_sorted2("`by'",`touse_first',`touse_last',`=_N')
+    matrix `byvalmatrix'=r(values)
+    noi matrix list r(values)
+    matrix `by_boundaries'=r(boundaries)
     local bynum=r(r)
 
-    tempname by_boundaries
-    mata: characterize_unique_vals_sorted2("`by'",`touse_first',`touse_last',`bynum')
-    matrix `by_boundaries'=r(boundaries)
-
-
-
-
     foreach i of numlist 1/`bynum'{
-
-        local byval `=`byvalmatrix'[`i',1]'
-        if ("`bylabel'"=="") {
-            local byvalname=`byval'
-        }
-        else {
-            local byvalname `: label `bylabel' `byval''
-        }
-
-
-        mata: characterize_unique_vals_sorted2("`bin'",`=`by_boundaries'[`i',1]',`=`by_boundaries'[`i',2]',`nbin')
-        tempname bin_boundaries bin_values
-        matrix `bin_boundaries'=r(boundaries)
-        matrix `bin_values'=r(values)
-        local bin_n =r(r)
-
-
-        local row=1
-        local xval=`bin_values'[`row', 1]
-        local yval=`varcount'[`=`bin_boundaries'[`row', 2]']
         local script `script' (scatteri
+            local byval `=`byvalmatrix'[`i',1]'
+            if ("`bylabel'"=="") {
+                local byvalname=`byval'
+            }
+            else {
+                local byvalname `: label `bylabel' `byval''
+            }
 
-            local row2 = 1
-            forvalues row = 1/`binnum'{
-                if  `=`binvalmatrix'[`row', 1]' < `=`bin_values'[`row2', 1]'{
+
+            cap  mata: characterize_unique_vals_sorted2("`bin'",`=`by_boundaries'[`i',1]',`=`by_boundaries'[`i',2]',`nbin')
+            if _rc{
+
+                forvalues row = 1/`binnum'{
                     local xval = `binvalmatrix'[`row', 1]
                     local yval = 0
                     local script `script' `yval' `xval' 
                 }
-                else{
-                    local xval = `bin_values'[`row2', 1]
-                    local yval = `varcount'[`=`bin_boundaries'[`row2', 2]']
+            }
+            else{
+
+                tempname bin_boundaries bin_values
+                matrix `bin_boundaries'=r(boundaries)
+                matrix `bin_values'=r(values)
+                local bin_n =r(r)
+
+                local row=1
+                local xval=`bin_values'[`row', 1]
+                local yval=`varcount'[`=`bin_boundaries'[`row', 2]']
+                local row2 = 1
+                forvalues row = 1/`binnum'{
+                    if  `=`binvalmatrix'[`row', 1]' < `=`bin_values'[`row2', 1]'{
+                        local xval = `binvalmatrix'[`row', 1]
+                        local yval = 0
+                        local script `script' `yval' `xval' 
+                    }
+                    else{
+                        local xval = `bin_values'[`row2', 1]
+                        local yval = `varcount'[`=`bin_boundaries'[`row2', 2]']
+                        local script `script' `yval' `xval' 
+                        local ++row2
+                    }
                     local script `script' `yval' `xval' 
-                    local ++row2
                 }
-                local script `script' `yval' `xval' 
+
             }
 
 
