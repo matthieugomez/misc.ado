@@ -81,6 +81,7 @@ if "`discrete'" == ""{
     if "`max'" == ""{
         local max `=r(max)'
     }
+
     tempname bottom top increment cutbin
     _pctile `varlist' if `touse' == 1, percentiles(25 50 75)
     scalar `bottom' = max(`min', r(r2) - 5*(r(r3)-r(r1)))
@@ -107,7 +108,7 @@ if "`discrete'" == ""{
     replace `bin'= (`bin'+0.5) /`nbin'* (`top'-`bottom') + `bottom' if `touse' == 1
 
     tempname binvalmatrix
-    noi tab `bin', nofreq matrow(`binvalmatrix')
+    tab `bin', nofreq matrow(`binvalmatrix')
     local binnum `r(r)'
     return local binvall`binnum' >= `: di %3.2f `=`binvalmatrix'[`binnum',1]''
     foreach i of numlist `=`binnum'-1'/2 {
@@ -178,7 +179,7 @@ if "`by'"~=""{
     tempname by_boundaries
     mata: characterize_unique_vals_sorted2("`by'",`touse_first',`touse_last',`=_N')
     matrix `byvalmatrix'=r(values)
-    noi matrix list r(values)
+    matrix list r(values)
     matrix `by_boundaries'=r(boundaries)
     local bynum=r(r)
 
