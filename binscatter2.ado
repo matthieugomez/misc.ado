@@ -719,8 +719,8 @@ foreach byval in `byvals' `noby' {
 			}
 
 			* Display graph
-			local graphcmd twoway `scatters' `fits', graphregion(fcolor(white)) `xlines' xtitle(`xtitle') ytitle(`ytitle') legend(`legend_labels' order(`order')) `bylegend' `options'
-			if ("`savedata'"!="") local savedata_graphcmd twoway `savedata_scatters' `fits', graphregion(fcolor(white)) `xlines' xtitle(`x_var') ytitle(`ytitle') legend(`legend_labels' order(`order')) `options'
+			local graphcmd twoway `scatters' `fits', graphregion(fcolor(white)) `xlines' xtitle(`"`xtitle'"') ytitle(`"`ytitle'"') legend(`legend_labels' order(`order')) `bylegend' `options'
+			if ("`savedata'"!="") local savedata_graphcmd twoway `savedata_scatters' `fits', graphregion(fcolor(white)) `xlines' xtitle(`"`xtitle'"') ytitle(`"`ytitle'"') legend(`legend_labels' order(`order')) `options'
 			`graphcmd'
 
 			****** Save results ******
