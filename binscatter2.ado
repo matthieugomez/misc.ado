@@ -158,7 +158,8 @@ program define binscatter2, eclass sortpreserve
 	* Check number of unique byvals & create local storing byvals
 	if "`by'"!="" {
 		local byvarname `by'
-
+		local bylab `: label var `by''
+		if "`bylab'" == "" local bylab `by'
 		capture confirm numeric variable `by'
 		if _rc {
 			* by-variable is string => generate a numeric version
@@ -176,66 +177,67 @@ program define binscatter2, eclass sortpreserve
 		forvalues i=1/`bynum' {
 			local byvals `byvals' `=`byvalmatrix'[`i',1]'
 		}
+
 	}
 	else local bynum=1
 	
 
-	****** Create residuals  ******
-	
-	if (`"`controls'`absorb'"'!="") quietly {
+****** Create residuals  ******
 
-		* Parse absorb to define the type of regression to be used
-		if `"`absorb'"'!="" {
-			local regtype "areg"
-			local absorb "absorb(`absorb')"
-		}
-		else {
-			local regtype "reg"
-		}
+if (`"`controls'`absorb'"'!="") quietly {
 
-		* Generate residuals
-		
-		local i = 0
-		foreach var of varlist `x_var' `y_vars' {
-			tempvar residvar
-			`regtype' `var' `controls' `wt' if `touse', `absorb'
-			predict `residvar' if e(sample), residuals
-			if ("`addmean'"!="noaddmean") {
-				summarize `var' `wt' if `touse', meanonly
-				replace `residvar'=`residvar'+r(mean)
-			}
-			
-			label variable `residvar' "`var'"
-			if `i'== 0 {
-				local x_r `residvar'
-			}
-			else{
-				local y_vars_r `y_vars_r' `residvar'
-				local varl `: var label `var''
-				if "`varl'"==""{
-					local y_varlabel`i'  `var'
-				}
-				else {
-					local y_varlabel`i' `varl'
-				}
-			}
-			local i = `i' + 1
-		}
+	* Parse absorb to define the type of regression to be used
+	if `"`absorb'"'!="" {
+		local regtype "areg"
+		local absorb "absorb(`absorb')"
 	}
-	else { 	/*absorb and controls both empty, no need for regression*/
-	local x_r `x_var'
-	local y_vars_r `y_vars'
+	else {
+		local regtype "reg"
+	}
+
+	* Generate residuals
+
 	local i = 0
-	foreach var of varlist  `y_vars' {
-		local ++i
-		local varl `: var label `var''
-		if "`varl'"==""{
-			local y_varlabel`i'  `var'
+	foreach var of varlist `x_var' `y_vars' {
+		tempvar residvar
+		`regtype' `var' `controls' `wt' if `touse', `absorb'
+		predict `residvar' if e(sample), residuals
+		if ("`addmean'"!="noaddmean") {
+			summarize `var' `wt' if `touse', meanonly
+			replace `residvar'=`residvar'+r(mean)
 		}
-		else {
-			local y_varlabel`i' `varl'
+
+		label variable `residvar' "`var'"
+		if `i'== 0 {
+			local x_r `residvar'
 		}
+		else{
+			local y_vars_r `y_vars_r' `residvar'
+			local varl `: var label `var''
+			if "`varl'"==""{
+				local y_varlabel`i'  `var'
+			}
+			else {
+				local y_varlabel`i' `varl'
+			}
+		}
+		local i = `i' + 1
 	}
+}
+else { 	/*absorb and controls both empty, no need for regression*/
+local x_r `x_var'
+local y_vars_r `y_vars'
+local i = 0
+foreach var of varlist  `y_vars' {
+	local ++i
+	local varl `: var label `var''
+	if "`varl'"==""{
+		local y_varlabel`i'  `var'
+	}
+	else {
+		local y_varlabel`i' `varl'
+	}
+}
 }
 
 
@@ -273,9 +275,9 @@ if inlist("`linetype'","lfit","qfit") `reg_verbosity' {
 			if "`reportreg'"!="" {
 				di "{txt}{hline}"
 				if ("`by'"!="") {
-					if ("`bylabel'"=="") di "-> `byvarname' = `byval'"
+					if ("`bylabel'"=="") di "-> `bylab' = `byval'"
 					else {
-						di "-> `byvarname' = `: label `bylabel' `byval''"
+						di "-> `bylab' = `: label `bylabel' `byval''"
 					}
 				}
 				if ("`rd'"!="") {
@@ -623,7 +625,7 @@ foreach byval in `byvals' `noby' {
 
 						if (`ynum'==1) local legend_labels `legend_labels' lab(`counter_series' `byvalname')
 						else local legend_labels `legend_labels' lab(`counter_series' `depvar_name': `byvalname')
-						local bylegend legend(subtitle("`byvarname'"))
+						local bylegend legend(subtitle("`bylab'"))
 					}
 					if ("`by'"!="" | `ynum'>1) local order `order' `counter_series'
 
