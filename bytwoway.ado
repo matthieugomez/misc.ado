@@ -36,7 +36,7 @@ program bytwoway
         local scatter_options ///
         color("`: word `i' of `colors''") ///
         legend(label(`i'  `byvalname')) 
-        local script `script' `anything' if `by' == `byval' & `touse' == 1, `scatter_options' 
+        local script `script' `anything' if `by' == `byval' & `touse' == 1, `scatter_options' `options'
     }
 
     twoway `script'  `bylegend' `options'   graphregion(fcolor(white)) 
