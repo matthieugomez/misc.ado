@@ -368,7 +368,7 @@ if "`xq'"=="" {
 
 	if "`discrete'"=="" { /* xq() and discrete are not specified */
 	* Check whether the number of unique values > nquantiles, or <= nquantiles
-	capture mata: characterize_unique_vals_sorted("`x_r'",`touse_first',`touse_last',`nquantiles')
+	capture mata: characterize_unique_vals_sorted2("`x_r'",`touse_first',`touse_last',`nquantiles')
 
 	if (_rc==0) { /* number of unique values <= nquantiles, set to discrete */
 	local discrete discrete
@@ -390,7 +390,7 @@ if ("`fastxtile'"!="nofastxtile") fastxtile `xq' = `x_r' `wt' in `touse_first'/`
 else xtile `xq' = `x_r' `wt' in `touse_first'/`touse_last', nq(`nquantiles')
 
 if ("`by'"=="") {
-	mata: characterize_unique_vals_sorted("`xq'",`touse_first',`touse_last',`nquantiles')
+	mata: characterize_unique_vals_sorted2("`xq'",`touse_first',`touse_last',`nquantiles')
 
 	if (r(r)!=`nquantiles') {
 		di as text "warning: nquantiles(`nquantiles') was specified, but only `r(r)' were generated. see help file under nquantiles() for explanation."
@@ -412,7 +412,7 @@ else { /* discrete is specified, xq() & genxq() are not */
 
 if ("`controls'`absorb'"!="") di as text "warning: discrete is specified in combination with controls() or absorb(). note that binning takes places after residualization, so the residualized x-variable may contain many more unique values."
 
-capture mata: characterize_unique_vals_sorted("`x_r'",`touse_first',`touse_last',`=`samplesize'')
+capture mata: characterize_unique_vals_sorted2("`x_r'",`touse_first',`touse_last',`=`samplesize'')
 
 if (_rc==0) {
 	local xq `x_r'
@@ -438,7 +438,7 @@ else {
 
 	* set nquantiles & boundaries
 
-	mata: characterize_unique_vals_sorted("`xq'",`touse_first',`touse_last',`=max(100,`samplesize'/2)')
+	mata: characterize_unique_vals_sorted2("`xq'",`touse_first',`touse_last',`=max(100,`samplesize'/2)')
 
 	if (_rc==0) {
 		local nquantiles=r(r)
@@ -462,13 +462,13 @@ else {
 if ("`by'"!="") {
 	sort `touse' `by' `xq'
 	tempname by_boundaries
-	mata: characterize_unique_vals_sorted("`by'",`touse_first',`touse_last',`bynum')
+	mata: characterize_unique_vals_sorted2("`by'",`touse_first',`touse_last',`bynum')
 	matrix `by_boundaries'=r(boundaries)
 }
 
 forvalues b=1/`bynum' {
 	if ("`by'"!="") {
-		mata: characterize_unique_vals_sorted("`xq'",`=`by_boundaries'[`b',1]',`=`by_boundaries'[`b',2]',`nquantiles')
+		mata: characterize_unique_vals_sorted2("`xq'",`=`by_boundaries'[`b',1]',`=`by_boundaries'[`b',2]',`nquantiles')
 		tempname xq_boundaries xq_values
 		matrix `xq_boundaries'=r(boundaries)
 		matrix `xq_values'=r(values)
@@ -481,7 +481,7 @@ forvalues b=1/`bynum' {
 		matrix `xbin_means'=`xq_values'
 	}
 	else {
-		means_in_boundaries `x_r' `wt', bounds(`xq_boundaries') `medians' `sum'
+		means_in_boundaries2 `x_r' `wt', bounds(`xq_boundaries') `medians' `sum'
 		matrix `xbin_means'=r(means)
 	}
 
@@ -490,7 +490,7 @@ forvalues b=1/`bynum' {
 	foreach depvar of varlist `y_vars_r' {
 		local ++counter_depvar
 
-		means_in_boundaries `depvar' `wt', bounds(`xq_boundaries') `medians' `sum'
+		means_in_boundaries2 `depvar' `wt', bounds(`xq_boundaries') `medians' `sum'
 
 		* store to matrix
 		if (`b'==1) {
@@ -866,7 +866,7 @@ end
 
 * Helper programs
 
-program define means_in_boundaries, rclass
+program define means_in_boundaries2, rclass
 	version 12.1
 
 	syntax varname(numeric) [aweight fweight], BOUNDsmat(name) [MEDians sum]
@@ -1064,7 +1064,7 @@ set matastrict on
 
 mata:
 
-	void characterize_unique_vals_sorted(string scalar var, real scalar first, real scalar last, real scalar maxuq) {
+	void characterize_unique_vals_sorted2(string scalar var, real scalar first, real scalar last, real scalar maxuq) {
 		// Inputs: a numeric variable, a starting & ending obs #, and a maximum number of unique values
 		// Requires: the data to be sorted on the specified variable within the observation boundaries given
 		//				(no check is made that this requirement is satisfied)
