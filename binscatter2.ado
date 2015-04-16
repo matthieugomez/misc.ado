@@ -656,11 +656,11 @@ foreach byval in `byvals' `noby' {
 							else local byvalname `: label `byvaluelabel' `byval''
 							if (`ynum'==1){
 								local legend_labels `legend_labels' lab(`counter_series' `byvalname')
-								local legend_title legend(subtitle("`byvarlabel'"))
 							}
 							else {
 								local legend_labels `legend_labels' lab(`counter_series' `depvarlabel', `byvarlabel': `byvalname')
 							}	
+							local legend_title legend(subtitle("`byvarlabel'"))
 						}
 						if ("`by'"!="" | `ynum'>1) local order `order' `counter_series'
 					}
