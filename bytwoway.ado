@@ -5,7 +5,7 @@ by(varname) ///
 Palette(string) Colors(string) MColors(string) LColors(string) MSymbols(string) LPatterns(string)  * ]
 
 marksample touse
-count if `touse'
+qui count if `touse'
 local samplesize=r(N)
 local touse_first=_N-`samplesize'+1
 local touse_last=_N
@@ -88,33 +88,29 @@ if `"`colors'"' == ""{
 }
 
 * Fill colors if missing
+local color1 `: word 1 of `colors''
+local color2 `: word 2 of `colors''
 if `"`mcolors'"'=="" {
-    if (`ynum'==1 & `bynum'==1 & "`linetype'"!="connect"){
-        local mcolors `: word 1 of `colors''
-    }
-    else if regexm("`aesthetics'","mcolor"){
-        local mcolors `colors'
+  if regexm("`aesthetics'","mcolor"){
+        local mcolors `"`colors'"'
     }
     else{
         local aesthetics `aesthetics' mcolor
-        local mcolors black black black black black black black ///
-        black black black black black black black black ///
-        black black black black black black black black
+        local mcolors `color1' `color1' `color1' `color1' `color1' `color1' `color1' ///
+        `color1' `color1' `color1' `color1' `color1' `color1' `color1' `color1' ///
+        `color1' `color1' `color1' `color1' `color1' `color1' `color1' `color1'
     }
 }
 
 if `"`lcolors'"'=="" {
-    if (`ynum'==1 & `bynum'==1 & "`linetype'"!="connect"){
-        local lcolors `: word 2 of `colors''
-    }
-    else if regexm("`aesthetics'","lcolor"){
-        local lcolors `colors'
+    if regexm("`aesthetics'","lcolor"){
+        local lcolors `"`colors'"'
     }
     else{
         local aesthetics `aesthetics' lcolor
-        local lcolors black black black black black black black ///
-        black black black black black black black black ///
-        black black black black black black black black
+        local lcolors `color2' `color2' `color2' `color2' `color2' `color2' `color2' ///
+        `color2' `color2' `color2' `color2' `color2' `color2' `color2' `color2' ///
+        `color2' `color2' `color2' `color2' `color2' `color2' `color2' `color2'
     }
 }
 

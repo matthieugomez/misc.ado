@@ -150,9 +150,9 @@ program define binscatter2, eclass sortpreserve
 	* Check number of unique byvals & create local storing byvals
 	if "`by'"!="" {
 		local byvarname `by'
-		local bylab `: var label `by''
+		local byvarlabel `: var label `by''
 		if "`byvarlabel'" == ""{
-			local bylab `by'
+			local byvarlabel `by'
 		}
 		capture confirm numeric variable `by'
 		if _rc {
@@ -510,8 +510,12 @@ local aesthetics `aesthetics2'
 
 if `"`colors'"' == ""{
 	if "`palette'" ~= ""{
-		cap assert "`mcolor'`lcolor'" ~= ""
-		colorscheme `bynum', palette(`palette')
+		if `ynum'==1 & `bynum' == 1  & "`linetype'"!="connect"{
+			colorscheme 2, palette(`palette')
+		}
+		else{
+			colorscheme `=`bynum' + `ynum' - 1', palette(`palette')
+		}
 		local colors `"`=r(colors)'"'
 	}
 	else{
@@ -522,40 +526,40 @@ if `"`colors'"' == ""{
 	}
 }
 
+local color1 `""`: word 1 of `colors''""'
 * Fill colors if missing
 if `"`mcolors'"'=="" {
 	if (`ynum'==1 & `bynum'==1 & "`linetype'"!="connect"){
-		local mcolors `: word 1 of `colors''
+		local mcolors `"`color1'"'
 	}
 	else if regexm("`aesthetics'","mcolor"){
-		local mcolors `colors'
+		local mcolors `"`colors'"'
 	}
 	else{
 		local aesthetics `aesthetics' mcolor
-		local mcolors navy navy navy navy navy navy navy ///
-		navy navy navy navy navy navy navy navy ///
-		navy navy navy navy navy navy navy navy
+		local mcolors `"`color1' `color1' `color1' `color1' `color1' `color1' `color1' ///
+		`color1' `color1' `color1' `color1' `color1' `color1' `color1' `color1' ///
+		`color1' `color1' `color1' `color1' `color1' `color1' `color1' `color1'"'
 	}
 }
-
 if `"`lcolors'"'=="" {
 	if (`ynum'==1 & `bynum'==1 & "`linetype'"!="connect"){
-		local lcolors `: word 2 of `colors''
+		local lcolors `""`: word 2 of `colors''""'
 	}
-	if regexm("`aesthetics'","lcolor"){
-		local lcolors `colors'
+	else if regexm("`aesthetics'","lcolor"){
+		local lcolors `"`colors'"'
 	}
 	else{
 		local aesthetics `aesthetics' lcolor
-		local lcolors navy navy navy navy navy navy navy ///
-		navy navy navy navy navy navy navy navy ///
-		navy navy navy navy navy navy navy navy
+		local lcolors `"`color1' `color1' `color1' `color1' `color1' `color1' `color1' ///
+		`color1' `color1' `color1' `color1' `color1' `color1' `color1' `color1' ///
+		`color1' `color1' `color1' `color1' `color1' `color1' `color1' `color1'"'
 	}
 }
 
 if `"`lpatterns'"'=="" {
 	if regexm("`aesthetics'","lpattern"){
-		local lpatterns solid dash vshortdash longdash longdash_dot dash_dot dot shortdash_dot tight_dot dash_dot_dot longdash_shortdash dash_3dot longdash_dot_dot shortdash_dot_dot longdash_3dot
+		local lpatterns `"solid dash vshortdash longdash longdash_dot dash_dot dot shortdash_dot tight_dot dash_dot_dot longdash_shortdash dash_3dot longdash_dot_dot shortdash_dot_dot longdash_3dot"'
 	}
 	else{
 		local aesthetics `aesthetics' lpattern
