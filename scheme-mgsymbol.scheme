@@ -6,7 +6,8 @@ color background             white
 color plotregion             white
 color matrix_plotregion      white
 color legend                 white
-
+color legend_line 			 none
+linewidth legend_line 		 none 
 
 // linewidth
 linewidth p                  thin
@@ -87,22 +88,22 @@ linewidth p15bar             thin
 // linepattern p14line shortdash_dot_dot
 // linepattern p15line longdash_3dot
 
-// symbol pattern
-// symbol p1     circle
-// symbol p2     diamond
-// symbol p3     square
-// symbol p4     triangle
-// symbol p5     x
-// symbol p6     plus
-// symbol p7     circle_hollow
-// symbol p8     diamond_hollow
-// symbol p9     square_hollow
-// symbol p10    triangle_hollow
-// symbol p11    smcircle
-// symbol p12    smdiamond
-// symbol p13    smsquare
-// symbol p14    smtriangle
-// symbol p15    smx
+symbol pattern
+symbol p1     circle
+symbol p2     diamond
+symbol p3     square
+symbol p4     triangle
+symbol p5     x
+symbol p6     plus
+symbol p7     circle_hollow
+symbol p8     diamond_hollow
+symbol p9     square_hollow
+symbol p10    triangle_hollow
+symbol p11    smcircle
+symbol p12    smdiamond
+symbol p13    smsquare
+symbol p14    smtriangle
+symbol p15    smx
 
 // symbol size
 symbolsize small
@@ -140,9 +141,6 @@ anglestyle vertical_tick     horizontal
 * gsize legend_key_ysize modifies size of key's symbol.  In case of scatter symbol, only ysize 
 gsize legend_key_ysize      6
 gsize legend_key_xsize      6
-color legend_line 			black
-linewidth legend		vvthin
-
 
 // other 
 intensity histogram          50

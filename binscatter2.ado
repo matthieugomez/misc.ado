@@ -9,13 +9,13 @@ program define binscatter2, eclass sortpreserve
 	Nquantiles(integer 20) GENxq(name) discrete xq(varname numeric) MEDians sum  ///
 	CONTROLs(varlist numeric ts fv) Absorb(varname) noAddmean ///
 	LINEtype(string) rd(numlist ascending) reportreg ///
-	COLors(string) MColors(string) LColors(string) Msymbols(string) ///
-	MLabel(string) ///
+	AESthetics(string) ///
+	palette(string) COLors(string) MColors(string) LColors(string) Msymbols(string) LPatterns(string) ///
 	savegraph(string) savedata(string) replace ///
-	ytitle(string) ///
+	ytitle(string) xtitle(string) ///
 	nofastxtile randvar(varname numeric) randcut(real 1) randn(integer -1) * ///
 	/* LEGACY OPTIONS */ nbins(integer 20) create_xq x_q(varname numeric) symbols(string) method(string) unique(string) ///
-	*]
+	]
 
 	set more off
 
@@ -125,15 +125,7 @@ program define binscatter2, eclass sortpreserve
 		}
 	}
 
-	if "`mlabel'" ~= "" {
-		if "`xq'" == "" & "`discrete'" == ""{
-			di as error "Specify the option discrete or xq() when using mlabel"
-			exit
-		}
-		if !regexm(`"`mlabel'"', "mlabcolor\("){
-			local mlabel `mlabel' mlabcolor(black)
-		}
-	}
+
 
 
 
@@ -159,18 +151,18 @@ program define binscatter2, eclass sortpreserve
 	if "`by'"!="" {
 		local byvarname `by'
 		local bylab `: var label `by''
-		if "`bylab'" == ""{
+		if "`byvarlabel'" == ""{
 			local bylab `by'
 		}
 		capture confirm numeric variable `by'
 		if _rc {
 			* by-variable is string => generate a numeric version
 			tempvar by
-			tempname bylabel
-			egen `by'=group(`byvarname'), lname(`bylabel')
+			tempname byvaluelabel
+			egen `by'=group(`byvarname'), lname(`byvaluelabel')
 		}
 		
-		local bylabel `:value label `by'' /*catch value labels for numeric by-vars too*/ 
+		local byvaluelabel `:value label `by'' /*catch value labels for numeric by-vars too*/ 
 		
 		tempname byvalmatrix
 		qui tab `by' if `touse', nofreq matrow(`byvalmatrix')
@@ -183,6 +175,7 @@ program define binscatter2, eclass sortpreserve
 	}
 	else local bynum=1
 	
+
 
 	****** Create residuals  ******
 
@@ -215,13 +208,6 @@ program define binscatter2, eclass sortpreserve
 			}
 			else{
 				local y_vars_r `y_vars_r' `residvar'
-				local varl `: var label `var''
-				if "`varl'"==""{
-					local y_varlabel`i'  `var'
-				}
-				else {
-					local y_varlabel`i' `varl'
-				}
 			}
 			local i = `i' + 1
 		}
@@ -229,18 +215,8 @@ program define binscatter2, eclass sortpreserve
 	else { 	/*absorb and controls both empty, no need for regression*/
 	local x_r `x_var'
 	local y_vars_r `y_vars'
-	local i = 0
-	foreach var of varlist  `y_vars' {
-		local ++i
-		local varl `: var label `var''
-		if "`varl'"==""{
-			local y_varlabel`i'  `var'
-		}
-		else {
-			local y_varlabel`i' `varl'
-		}
-	}
 }
+
 
 
 
@@ -277,9 +253,9 @@ if inlist("`linetype'","lfit","qfit") `reg_verbosity' {
 			if "`reportreg'"!="" {
 				di "{txt}{hline}"
 				if ("`by'"!="") {
-					if ("`bylabel'"=="") di "-> `bylab' = `byval'"
+					if ("`byvaluelabel'"=="") di "-> `byvarlabel' = `byval'"
 					else {
-						di "-> `bylab' = `: label `bylabel' `byval''"
+						di "-> `byvarlabel' = `: label `byvaluelabel' `byval''"
 					}
 				}
 				if ("`rd'"!="") {
@@ -305,11 +281,11 @@ if inlist("`linetype'","lfit","qfit") `reg_verbosity' {
 			foreach depvar of varlist `y_vars_r' {
 
 				* display text headers
-				local depvar_name `y_varlabel`counter_depvar''
 				if (`ynum'>1) {
-					di as text "{bf:y_var = `depvar_name'}"
+					if ("`controls'`absorb'"!="") local depvar_name : var label `depvar'
+					else local depvar_name `depvar'
+					di as text `"{bf:y_var = `depvar_name'}"'
 				}
-
 				* perform regression
 				if ("`reg_verbosity'"=="quietly") capture reg `depvar' `x_r2' `x_r' `wt' if `conds'
 				else capture noisily reg `depvar' `x_r2' `x_r' `wt' if `conds'
@@ -516,40 +492,93 @@ if "`rd'"!="" {
 	}
 }
 
-* Fill colors if missing
-if `"`colors'"'=="" local colors ///
-navy maroon forest_green dkorange teal cranberry lavender ///
-khaki sienna emidblue emerald brown erose gold bluishgray ///
-/* lime magenta cyan pink blue */
 
-* if there is RGB/HSV color, then
-if !regexm(`"`colors'"', `"""'){
-	tokenize `colors'
-	local colors ""
-	while "`1'"~=""{
-		local colors `"`colors' "`1'""'
-		macro shift
+* default aesthetics to color and replace color by mcolor and lcolor
+if "`aesthetics'" == ""{
+	local aesthetics mcolor lcolor
+}
+local aesthetics2
+foreach a in `aesthetics'{
+	if "`a'" == "color"{
+		local aesthetics2 `aesthetics2' mcolor lcolor
+	}
+	else{
+		local aesthetics2 `aesthetics2' `a'
+	}
+}
+local aesthetics `aesthetics2'
+
+if `"`colors'"' == ""{
+	if "`palette'" ~= ""{
+		cap assert "`mcolor'`lcolor'" ~= ""
+		colorscheme `bynum', palette(`palette')
+		local colors `"`=r(colors)'"'
+	}
+	else{
+		local colors ///
+		navy maroon forest_green dkorange teal cranberry lavender ///
+		khaki sienna emidblue emerald brown erose gold bluishgray ///
+		lime magenta cyan pink blue
 	}
 }
 
+* Fill colors if missing
 if `"`mcolors'"'=="" {
-	if (`ynum'==1 & `bynum'==1 & "`linetype'"!="connect") local mcolors `: word 1 of `colors''
-	else local mcolors `"`colors'"'
+	if (`ynum'==1 & `bynum'==1 & "`linetype'"!="connect"){
+		local mcolors `: word 1 of `colors''
+	}
+	else if regexm("`aesthetics'","mcolor"){
+		local mcolors `colors'
+	}
+	else{
+		local aesthetics `aesthetics' mcolor
+		local mcolors navy navy navy navy navy navy navy ///
+		navy navy navy navy navy navy navy navy ///
+		navy navy navy navy navy navy navy navy
+	}
 }
+
 if `"`lcolors'"'=="" {
-	if (`ynum'==1 & `bynum'==1 & "`linetype'"!="connect") local lcolors `: word 2 of `colors''
-	else local lcolors `"`colors'"'
+	if (`ynum'==1 & `bynum'==1 & "`linetype'"!="connect"){
+		local lcolors `: word 2 of `colors''
+	}
+	if regexm("`aesthetics'","lcolor"){
+		local lcolors `colors'
+	}
+	else{
+		local aesthetics `aesthetics' lcolor
+		local lcolors navy navy navy navy navy navy navy ///
+		navy navy navy navy navy navy navy navy ///
+		navy navy navy navy navy navy navy navy
+	}
 }
-local num_mcolor=wordcount(`"`mcolors'"')
-local num_lcolor=wordcount(`"`lcolors'"')
+
+if `"`lpatterns'"'=="" {
+	if regexm("`aesthetics'","lpattern"){
+		local lpatterns solid dash vshortdash longdash longdash_dot dash_dot dot shortdash_dot tight_dot dash_dot_dot longdash_shortdash dash_3dot longdash_dot_dot shortdash_dot_dot longdash_3dot
+	}
+	else{
+		local aesthetics `aesthetics' lpattern
+		local lpatterns solid solid solid solid solid solid solid solid solid solid solid solid solid solid solid solid solid solid solid solid solid solid solid solid solid solid solid solid 
+	}
+}
+
+if `"`msymbols'"'=="" {
+	if regexm("`aesthetics'","lpattern"){
+		local msymbols circle diamond square triangle x plus circle_hollow diamond_hollow square_hollow triangle_hollow smcircle smdiamond smsquare smtriangle smx
+
+	}
+	else{
+		local aesthetics `aesthetics' msymbols
+		local msymbols circle circle circle circle circle circle circle circle circle circle circle circle circle circle circle circle circle circle circle circle circle circle circle circle circle circle circle circle circle 
+	}
+}
+
+
 
 
 * Prepare connect & msymbol options
 if ("`linetype'"=="connect") local connect "c(l)"
-if "`msymbols'"!="" {
-	local symbol_prefix "msymbol("
-		local symbol_suffix ")"
-}
 
 *** Prepare scatters
 
@@ -572,456 +601,473 @@ foreach byval in `byvals' `noby' {
 	foreach depvar of varlist `y_vars' {
 		local ++counter_depvar
 		local ++c
-
-		local depvar_name `y_varlabel`counter_depvar''
 		* LOOP over rows (each row contains a coordinate pair)
 		local row=1
 		local xval=`y`counter_depvar'_scatterpts'[`row',`xind']
 		local yval=`y`counter_depvar'_scatterpts'[`row',`yind']
 
+		local depvarlabel `:var label `depvar''
+		if `"`depvarlabel'"' == ""{
+			local depvarlabel `depvar'
+		}
+
+
 		if !missing(`xval',`yval') {
 			local ++counter_series
 			local scatters `scatters' (scatteri
 				if ("`savedata'"!="") {
-					if ("`by'"=="") local savedata_scatters `savedata_scatters' (scatter `depvar' `x_var'
-						else local savedata_scatters `savedata_scatters' (scatter `depvar'_by`counter_by' `x_var'_by`counter_by'
-					}
-				}
-				else {
-					* skip the rest of this loop iteration
-					continue
-				}
-
-				while (`xval'!=. & `yval'!=.) {
-					if "`mlabel'" ~= ""{
-						local scatters `scatters' `yval' `xval' "`:label (`xq') `=`row'''"
+					if ("`by'"==""){
+						local savedata_scatters `savedata_scatters' (scatter `depvar' `x_var' 
 					}
 					else{
-						local scatters `scatters' `yval' `xval' 
+						local savedata_scatters `savedata_scatters' (scatter `depvar'_by`counter_by' `x_var'_by`counter_by'
 					}
-					local ++row
-					local xval=`y`counter_depvar'_scatterpts'[`row',`xind']
-					local yval=`y`counter_depvar'_scatterpts'[`row',`yind']
 				}
+			}
+			else {
+				* skip the rest of this loop iteration
+				continue
+			}
 
+			while (`xval'!=. & `yval'!=.) {
 
+				local scatters `scatters' `yval' `xval' 
 
-				* Add options
-				local scatter_options `connect' mcolor("`: word `c' of `mcolors''") lcolor("`: word `c' of `lcolors''") `symbol_prefix'`: word `c' of `msymbols''`symbol_suffix' `mlabel'
-				local scatters `scatters', `scatter_options')
+				local ++row
+				local xval=`y`counter_depvar'_scatterpts'[`row',`xind']
+				local yval=`y`counter_depvar'_scatterpts'[`row',`yind']
+			}
+
+			local scatter_options `connect'
+			foreach a in `aesthetics' {
+				local scatter_option `a'(`"`:word `counter_series' of ``a's''"')
+				local scatter_options `scatter_options' `scatter_option'
+			}
+			local scatters `scatters', `scatter_options')
 						if ("`savedata'"!="") local savedata_scatters `savedata_scatters', `scatter_options')
 
-					* stop mlab after doing it once
-					local mlabel ""
-					* Add legend
-					if "`by'"=="" {
-						if (`ynum'==1) local legend_labels off
-						else local legend_labels `legend_labels' lab(`counter_series' `depvar_name')
-					}
-					else {
-						if ("`bylabel'"=="") local byvalname=`byval'
-						else {
-							local byvalname `: label `bylabel' `byval''
+						* Add legend
+						if "`by'"=="" {
+							if (`ynum'==1) local legend_labels off
+							else local legend_labels `legend_labels' lab(`counter_series' `depvarlabel')
 						}
-
-
-						if (`ynum'==1) local legend_labels `legend_labels' lab(`counter_series' `byvalname')
-						else local legend_labels `legend_labels' lab(`counter_series' `depvar_name': `byvalname')
-						local bylegend legend(subtitle("`bylab'"))
-					}
-					if ("`by'"!="" | `ynum'>1) local order `order' `counter_series'
-
-				}
-
-			}
-
-			*** Fit lines
-
-			if inlist(`"`linetype'"',"lfit","qfit") {
-
-				* c indexes which color is to be used
-				local c=0
-
-				local rdnum=wordcount("`rd'")+1
-
-				tempname fitline_bounds
-				if ("`rd'"=="") matrix `fitline_bounds'=.,.
-				else matrix `fitline_bounds'=.,`=subinstr("`rd'"," ",",",.)',.
-
-				* LOOP over by-vars
-				local counter_by=0
-				if ("`by'"=="") local noby="noby"
-				foreach byval in `byvals' `noby' {
-					local ++counter_by
-
-					** Set the column for the x-coords in the scatterpts matrix
-					local xind=`counter_by'*2-1
-
-					* Set the row to start seeking from
-					*     note: each time we seek a coeff, it should be from row (rd_num)(counter_by-1)+counter_rd
-					local row0=( `rdnum' ) * (`counter_by' - 1)
-
-
-					* LOOP over y-vars
-					local counter_depvar=0
-					foreach depvar of varlist `y_vars_r' {
-						local ++counter_depvar
-						local ++c
-
-						* Find lower and upper bounds for the fit line
-						matrix `fitline_bounds'[1,1]=`y`counter_depvar'_scatterpts'[1,`xind']
-
-						local fitline_ub_rindex=`nquantiles'
-						local fitline_ub=.
-						while `fitline_ub'==. {
-							local fitline_ub=`y`counter_depvar'_scatterpts'[`fitline_ub_rindex',`xind']
-							local --fitline_ub_rindex
+						else{
+							if ("`byvaluelabel'"=="") local byvalname `byval'
+							else local byvalname `: label `byvaluelabel' `byval''
+							if (`ynum'==1){
+								local legend_labels `legend_labels' lab(`counter_series' `byvalname')
+								local legend_title legend(subtitle("`byvarlabel'"))
+							}
+							else {
+								local legend_labels `legend_labels' lab(`counter_series' `depvarlabel', `byvarlabel': `byvalname')
+							}	
 						}
-						matrix `fitline_bounds'[1,`rdnum'+1]=`fitline_ub'
+						if ("`by'"!="" | `ynum'>1) local order `order' `counter_series'
+					}
+				}
 
-						* LOOP over rd intervals
-						forvalues counter_rd=1/`rdnum' {
+				*** Fit lines
 
-							if (`"`linetype'"'=="lfit") {
-								local coef_quad=0
-								local coef_lin=`y`counter_depvar'_coefs'[`row0'+`counter_rd',1]
-								local coef_cons=`y`counter_depvar'_coefs'[`row0'+`counter_rd',2]
+				if inlist(`"`linetype'"',"lfit","qfit") {
+
+					* c indexes which color is to be used
+					local c=0
+
+					local rdnum=wordcount("`rd'")+1
+
+					tempname fitline_bounds
+					if ("`rd'"=="") matrix `fitline_bounds'=.,.
+					else matrix `fitline_bounds'=.,`=subinstr("`rd'"," ",",",.)',.
+
+					* LOOP over by-vars
+					local counter_by=0
+					if ("`by'"=="") local noby="noby"
+					foreach byval in `byvals' `noby' {
+						local ++counter_by
+
+						** Set the column for the x-coords in the scatterpts matrix
+						local xind=`counter_by'*2-1
+
+						* Set the row to start seeking from
+						*     note: each time we seek a coeff, it should be from row (rd_num)(counter_by-1)+counter_rd
+						local row0=( `rdnum' ) * (`counter_by' - 1)
+
+
+						* LOOP over y-vars
+						local counter_depvar=0
+						foreach depvar of varlist `y_vars_r' {
+							local ++counter_depvar
+							local ++c
+
+							* Find lower and upper bounds for the fit line
+							matrix `fitline_bounds'[1,1]=`y`counter_depvar'_scatterpts'[1,`xind']
+
+							local fitline_ub_rindex=`nquantiles'
+							local fitline_ub=.
+							while `fitline_ub'==. {
+								local fitline_ub=`y`counter_depvar'_scatterpts'[`fitline_ub_rindex',`xind']
+								local --fitline_ub_rindex
 							}
-							else if (`"`linetype'"'=="qfit") {
-								local coef_quad=`y`counter_depvar'_coefs'[`row0'+`counter_rd',1]
-								local coef_lin=`y`counter_depvar'_coefs'[`row0'+`counter_rd',2]
-								local coef_cons=`y`counter_depvar'_coefs'[`row0'+`counter_rd',3]
-							}
+							matrix `fitline_bounds'[1,`rdnum'+1]=`fitline_ub'
 
-							if !missing(`coef_quad',`coef_lin',`coef_cons') {
-								local leftbound=`fitline_bounds'[1,`counter_rd']
-								local rightbound=`fitline_bounds'[1,`counter_rd'+1]
+							* LOOP over rd intervals
+							forvalues counter_rd=1/`rdnum' {
 
-								local fits `fits' (function `coef_quad'*x^2+`coef_lin'*x+`coef_cons', range(`leftbound' `rightbound') lcolor("`: word `c' of `lcolors''"))
+								if (`"`linetype'"'=="lfit") {
+									local coef_quad=0
+									local coef_lin=`y`counter_depvar'_coefs'[`row0'+`counter_rd',1]
+									local coef_cons=`y`counter_depvar'_coefs'[`row0'+`counter_rd',2]
+								}
+								else if (`"`linetype'"'=="qfit") {
+									local coef_quad=`y`counter_depvar'_coefs'[`row0'+`counter_rd',1]
+									local coef_lin=`y`counter_depvar'_coefs'[`row0'+`counter_rd',2]
+									local coef_cons=`y`counter_depvar'_coefs'[`row0'+`counter_rd',3]
+								}
+
+								if !missing(`coef_quad',`coef_lin',`coef_cons') {
+									local leftbound=`fitline_bounds'[1,`counter_rd']
+									local rightbound=`fitline_bounds'[1,`counter_rd'+1]
+									local fit_options ""
+									foreach a in `aesthetics'{
+										if regexm("`a'", "(lcolor)|(lpattern)"){
+											local fit_options `fit_options' `a'(`"`: word `c' of ``a's''"')
+										}
+									}
+									local fits `fits' (function `coef_quad'*x^2+`coef_lin'*x+`coef_cons', range(`leftbound' `rightbound') `fit_options')
+								}
 							}
 						}
 					}
 				}
-			}
 
-			* Prepare x-xis and y-axis title
-			local xtitle `: var label `x_var''
-			if "`xtitle'"==""{
-				local xtitle `x_var'
-			}
-
-			if "`ytitle'" == ""{
-				local ytitle `y_varlabel1' 
-				if (`ynum'==2){
-					local ytitle `ytitle' and `y_varlabel2'
-				}
-				else if `ynum' > 2{
-					foreach i of numlist 2/`ynum'{
-						local ytitle `ytitle' ; `y_varlabel`i''
+				* Prepare x-xis and y-axis title
+				if `"`xtitle'"' == ""{
+					local xtitle `: var label `x_var''
+					if `"`xtitle'"' == ""{
+						local xtitle `x_var'
 					}
 				}
-			}
 
-			* Display graph
-			local graphcmd twoway `scatters' `fits', graphregion(fcolor(white)) `xlines' xtitle(`"`xtitle'"') ytitle(`"`ytitle'"') legend(`legend_labels' order(`order')) `bylegend' `options'
-			if ("`savedata'"!="") local savedata_graphcmd twoway `savedata_scatters' `fits', graphregion(fcolor(white)) `xlines' xtitle(`"`xtitle'"') ytitle(`"`ytitle'"') legend(`legend_labels' order(`order')) `options'
-			`graphcmd'
+				if `"`ytitle'"'  == ""{
+					local i = 0
+					foreach var of varlist `y_vars' {
+						local ++i
+						local ylabel`i' `: var label `var''
+						if `"`ylabel`i''"' == ""{
+							local ylabel`i' `var'
+						}
+					}
+					local ytitle `ylabel1' 
+					if (`ynum'==2){
+						local ytitle `ytitle' and `ylabel2'
+					}
+					else if `ynum' > 2{
+						foreach i of numlist 2/`ynum'{
+							local ytitle `ytitle' ; `ylabel`i''
+						}
+					}
+				}
 
-			****** Save results ******
+				* Display graph
+				local graphcmd twoway `scatters' `fits', graphregion(fcolor(white)) `xlines' xtitle(`"`xtitle'"') ytitle(`"`ytitle'"') legend(`legend_labels' order(`order')) `legend_title' `options'
+				if ("`savedata'"!="") local savedata_graphcmd twoway `savedata_scatters' `fits', graphregion(fcolor(white)) `xlines' xtitle(`"`xtitle'"') ytitle(`"`ytitle'"') legend(`legend_labels' order(`order')) `options'
+				`graphcmd'
 
-			* Save graph
-			if `"`savegraph'"'!="" {
-				* check file extension using a regular expression
-				if regexm(`"`savegraph'"',"\.[a-zA-Z0-9]+$") local graphextension=regexs(0)
+				****** Save results ******
 
-				if inlist(`"`graphextension'"',".gph","") graph save `"`savegraph'"', `replace'
-				else graph export `"`savegraph'"', `replace'
-			}
+				* Save graph
+				if `"`savegraph'"'!="" {
+					* check file extension using a regular expression
+					if regexm(`"`savegraph'"',"\.[a-zA-Z0-9]+$") local graphextension=regexs(0)
 
-			* Save data
-			if ("`savedata'"!="") {
+					if inlist(`"`graphextension'"',".gph","") graph save `"`savegraph'"', `replace'
+					else graph export `"`savegraph'"', `replace'
+				}
 
-				*** Save a CSV containing the scatter points
-				tempname savedatafile
-				file open `savedatafile' using `"`savedata'.csv"', write text `replace'
+				* Save data
+				if ("`savedata'"!="") {
 
-				* LOOP over rows
-				forvalues row=0/`nquantiles' {
+					*** Save a CSV containing the scatter points
+					tempname savedatafile
+					file open `savedatafile' using `"`savedata'.csv"', write text `replace'
 
-					*** Put the x-variable at the left
+					* LOOP over rows
+					forvalues row=0/`nquantiles' {
+
+						*** Put the x-variable at the left
+						* LOOP over by-vals
+						forvalues counter_by=1/`bynum' {
+
+							if (`row'==0) { /* write variable names */
+							if "`by'"!="" local bynlabel _by`counter_by'
+							file write `savedatafile' "`x_var'`bynlabel',"
+						}
+						else { /* write data values */
+						if (`row'<=`=rowsof(`y1_scatterpts')') file write `savedatafile' (`y1_scatterpts'[`row',`counter_by'*2-1]) ","
+						else file write `savedatafile' ".,"
+					}
+				}
+
+				*** Now y-variables at the right
+
+				* LOOP over y-vars
+				local counter_depvar=0
+				foreach depvar of varlist `y_vars' {
+					local ++counter_depvar
+
 					* LOOP over by-vals
 					forvalues counter_by=1/`bynum' {
 
+
 						if (`row'==0) { /* write variable names */
 						if "`by'"!="" local bynlabel _by`counter_by'
-						file write `savedatafile' "`x_var'`bynlabel',"
+						file write `savedatafile' "`depvar'`bynlabel'"
 					}
 					else { /* write data values */
-					if (`row'<=`=rowsof(`y1_scatterpts')') file write `savedatafile' (`y1_scatterpts'[`row',`counter_by'*2-1]) ","
-					else file write `savedatafile' ".,"
+					if (`row'<=`=rowsof(`y`counter_depvar'_scatterpts')') file write `savedatafile' (`y`counter_depvar'_scatterpts'[`row',`counter_by'*2])
+					else file write `savedatafile' "."
 				}
-			}
 
-			*** Now y-variables at the right
+				* unless this is the last variable in the dataset, add a comma
+				if !(`counter_depvar'==`ynum' & `counter_by'==`bynum') file write `savedatafile' ","
 
-			* LOOP over y-vars
-			local counter_depvar=0
-			foreach depvar of varlist `y_vars' {
-				local ++counter_depvar
+				} /* end by-val loop */
 
-				* LOOP over by-vals
-				forvalues counter_by=1/`bynum' {
+				} /* end y-var loop */
 
+				file write `savedatafile' _n
 
-					if (`row'==0) { /* write variable names */
-					if "`by'"!="" local bynlabel _by`counter_by'
-					file write `savedatafile' "`depvar'`bynlabel'"
-				}
-				else { /* write data values */
-				if (`row'<=`=rowsof(`y`counter_depvar'_scatterpts')') file write `savedatafile' (`y`counter_depvar'_scatterpts'[`row',`counter_by'*2])
-				else file write `savedatafile' "."
-			}
+				} /* end row loop */
 
-			* unless this is the last variable in the dataset, add a comma
-			if !(`counter_depvar'==`ynum' & `counter_by'==`bynum') file write `savedatafile' ","
-
-			} /* end by-val loop */
-
-			} /* end y-var loop */
-
-			file write `savedatafile' _n
-
-			} /* end row loop */
-
-			file close `savedatafile'
-			di as text `"(file `savedata'.csv written containing saved data)"'
+				file close `savedatafile'
+				di as text `"(file `savedata'.csv written containing saved data)"'
 
 
 
-			*** Save a do-file with the commands to generate a nicely labeled dataset and re-create the binscatter graph
+				*** Save a do-file with the commands to generate a nicely labeled dataset and re-create the binscatter graph
 
-			file open `savedatafile' using `"`savedata'.do"', write text `replace'
+				file open `savedatafile' using `"`savedata'.do"', write text `replace'
 
-			file write `savedatafile' `"insheet using `savedata'.csv"' _n _n
+				file write `savedatafile' `"insheet using `savedata'.csv"' _n _n
 
-			if "`by'"!="" {
-				foreach var of varlist `x_var' `y_vars' {
-					local counter_by=0
-					foreach byval in `byvals' {
-						local ++counter_by
-						if ("`bylabel'"=="") local byvalname=`byval'
-						else {
-							local byvalname `: label `bylabel' `byval''
+				if "`by'"!="" {
+					foreach var of varlist `x_var' `y_vars' {
+						local counter_by=0
+						foreach byval in `byvals' {
+							local ++counter_by
+							if ("`byvaluelabel'"=="") local byvalname=`byval'
+							else {
+								local byvalname `: label `byvaluelabel' `byval''
+							}
+							file write `savedatafile' `"label variable `var'_by`counter_by' "`var'; `byvarname'==`byvalname'""' _n
 						}
-						file write `savedatafile' `"label variable `var'_by`counter_by' "`var'; `byvarname'==`byvalname'""' _n
+					}
+					file write `savedatafile' _n
+				}
+
+				file write `savedatafile' `"`savedata_graphcmd'"' _n
+
+				file close `savedatafile'
+				di as text `"(file `savedata'.do written containing commands to process saved data)"'
+
+			}
+
+			*** Return items
+			ereturn post, esample(`touse')
+
+			ereturn scalar N = `samplesize'
+
+			ereturn local graphcmd `"`graphcmd'"'
+			if inlist("`linetype'","lfit","qfit") {
+				forvalues yi=`ynum'(-1)1 {
+					ereturn matrix y`yi'_coefs=`y`yi'_coefs'
+				}
+			}
+
+			if ("`rd'"!="") {
+				tempname rdintervals
+				matrix `rdintervals' = (. \ `=subinstr("`rd'"," ","\",.)' ) , ( `=subinstr("`rd'"," ","\",.)' \ .)
+
+				forvalues i=1/`=rowsof(`rdintervals')' {
+					local rdintervals_labels `rdintervals_labels' rd`i'
+				}
+				matrix rownames `rdintervals' = `rdintervals_labels'
+				matrix colnames `rdintervals' = gt lt_eq
+				ereturn matrix rdintervals=`rdintervals'
+			}
+
+			if ("`by'"!="" & "`by'"=="`byvarname'") { /* if a numeric by-variable was specified */
+			forvalues i=1/`=rowsof(`byvalmatrix')' {
+				local byvalmatrix_labels `byvalmatrix_labels' by`i'
+			}
+			matrix rownames `byvalmatrix' = `byvalmatrix_labels'
+			matrix colnames `byvalmatrix' = `by'
+			ereturn matrix byvalues=`byvalmatrix'
+		}
+
+	end
+
+
+	**********************************
+
+	* Helper programs
+
+	program define means_in_boundaries2, rclass
+		version 12.1
+
+		syntax varname(numeric) [aweight fweight], BOUNDsmat(name) [MEDians sum]
+
+		* Create convenient weight local
+		if ("`weight'"!="") local wt [`weight'`exp']
+
+		local r=rowsof(`boundsmat')
+		matrix means=J(`r',1,.)
+
+		if "`sum'" ~= ""{
+			forvalues i=1/`r' {
+				sum `varlist' in `=`boundsmat'[`i',1]'/`=`boundsmat'[`i',2]' `wt', meanonly
+				matrix means[`i',1]=r(mean)*r(N)
+			}
+		}
+		else if "`medians'" ~= ""{
+			forvalues i=1/`r' {
+				_pctile `varlist' in `=`boundsmat'[`i',1]'/`=`boundsmat'[`i',2]' `wt', percentiles(50)
+				matrix means[`i',1]=r(r1)
+			}
+		}
+		else{
+			forvalues i=1/`r' {
+				sum `varlist' in `=`boundsmat'[`i',1]'/`=`boundsmat'[`i',2]' `wt', meanonly
+				matrix means[`i',1]=r(mean)
+			}
+		}
+		return clear
+		return matrix means=means
+
+	end
+
+	*** copy of: version 1.21  8oct2013  Michael Stepner, stepner@mit.edu
+	program define fastxtile, rclass
+		version 11
+
+		* Parse weights, if any
+		_parsewt "aweight fweight pweight" `0' 
+		local 0  "`s(newcmd)'" /* command minus weight statement */
+		local wt "`s(weight)'"  /* contains [weight=exp] or nothing */
+
+		* Extract parameters
+		syntax newvarname=/exp [if] [in] [,Nquantiles(integer 2) Cutpoints(varname numeric) ALTdef ///
+		CUTValues(numlist ascending) randvar(varname numeric) randcut(real 1) randn(integer -1)]
+
+		* Mark observations which will be placed in quantiles
+		marksample touse, novarlist
+		markout `touse' `exp'
+		qui count if `touse'
+		local popsize=r(N)
+
+
+		if "`cutpoints'"=="" & "`cutvalues'"=="" { /***** NQUANTILES *****/
+		if `"`wt'"'!="" & "`altdef'"!="" {
+			di as error "altdef option cannot be used with weights"
+			exit 198
+		}
+
+		if `randn'!=-1 {
+			if `randcut'!=1 {
+				di as error "cannot specify both randcut() and randn()"
+				exit 198
+			}
+			else if `randn'<1 {
+				di as error "randn() must be a positive integer"
+				exit 198
+			}
+			else if `randn'>`popsize' {
+				di as text "randn() is larger than the population. using the full population."
+				local randvar=""
+			}
+			else {
+				local randcut=`randn'/`popsize'
+
+				if "`randvar'"!="" {
+					qui sum `randvar', meanonly
+					if r(min)<0 | r(max)>1 {
+						di as error "with randn(), the randvar specified must be in [0,1] and ought to be uniformly distributed"
+						exit 198
 					}
 				}
-				file write `savedatafile' _n
-			}
-
-			file write `savedatafile' `"`savedata_graphcmd'"' _n
-
-			file close `savedatafile'
-			di as text `"(file `savedata'.do written containing commands to process saved data)"'
-
-		}
-
-		*** Return items
-		ereturn post, esample(`touse')
-
-		ereturn scalar N = `samplesize'
-
-		ereturn local graphcmd `"`graphcmd'"'
-		if inlist("`linetype'","lfit","qfit") {
-			forvalues yi=`ynum'(-1)1 {
-				ereturn matrix y`yi'_coefs=`y`yi'_coefs'
 			}
 		}
 
-		if ("`rd'"!="") {
-			tempname rdintervals
-			matrix `rdintervals' = (. \ `=subinstr("`rd'"," ","\",.)' ) , ( `=subinstr("`rd'"," ","\",.)' \ .)
-
-			forvalues i=1/`=rowsof(`rdintervals')' {
-				local rdintervals_labels `rdintervals_labels' rd`i'
+		* Check if need to gen a temporary uniform random var
+		if "`randvar'"=="" {
+			if (`randcut'<1 & `randcut'>0) { 
+				tempvar randvar
+				gen `randvar'=runiform()
 			}
-			matrix rownames `rdintervals' = `rdintervals_labels'
-			matrix colnames `rdintervals' = gt lt_eq
-			ereturn matrix rdintervals=`rdintervals'
+			* randcut sanity check
+			else if `randcut'!=1 {
+				di as error "if randcut() is specified without randvar(), a uniform r.v. will be generated and randcut() must be in (0,1)"
+				exit 198
+			}
 		}
 
-		if ("`by'"!="" & "`by'"=="`byvarname'") { /* if a numeric by-variable was specified */
-		forvalues i=1/`=rowsof(`byvalmatrix')' {
-			local byvalmatrix_labels `byvalmatrix_labels' by`i'
-		}
-		matrix rownames `byvalmatrix' = `byvalmatrix_labels'
-		matrix colnames `byvalmatrix' = `by'
-		ereturn matrix byvalues=`byvalmatrix'
-	}
-
-end
-
-
-**********************************
-
-* Helper programs
-
-program define means_in_boundaries2, rclass
-	version 12.1
-
-	syntax varname(numeric) [aweight fweight], BOUNDsmat(name) [MEDians sum]
-
-	* Create convenient weight local
-	if ("`weight'"!="") local wt [`weight'`exp']
-
-	local r=rowsof(`boundsmat')
-	matrix means=J(`r',1,.)
-
-	if "`sum'" ~= ""{
-		forvalues i=1/`r' {
-			sum `varlist' in `=`boundsmat'[`i',1]'/`=`boundsmat'[`i',2]' `wt', meanonly
-			matrix means[`i',1]=r(mean)*r(N)
-		}
-	}
-	else if "`medians'" ~= ""{
-		forvalues i=1/`r' {
-			_pctile `varlist' in `=`boundsmat'[`i',1]'/`=`boundsmat'[`i',2]' `wt', percentiles(50)
-			matrix means[`i',1]=r(r1)
-		}
-	}
-	else{
-		forvalues i=1/`r' {
-			sum `varlist' in `=`boundsmat'[`i',1]'/`=`boundsmat'[`i',2]' `wt', meanonly
-			matrix means[`i',1]=r(mean)
-		}
-	}
-	return clear
-	return matrix means=means
-
-end
-
-*** copy of: version 1.21  8oct2013  Michael Stepner, stepner@mit.edu
-program define fastxtile, rclass
-	version 11
-
-	* Parse weights, if any
-	_parsewt "aweight fweight pweight" `0' 
-	local 0  "`s(newcmd)'" /* command minus weight statement */
-	local wt "`s(weight)'"  /* contains [weight=exp] or nothing */
-
-	* Extract parameters
-	syntax newvarname=/exp [if] [in] [,Nquantiles(integer 2) Cutpoints(varname numeric) ALTdef ///
-	CUTValues(numlist ascending) randvar(varname numeric) randcut(real 1) randn(integer -1)]
-
-	* Mark observations which will be placed in quantiles
-	marksample touse, novarlist
-	markout `touse' `exp'
-	qui count if `touse'
-	local popsize=r(N)
-
-
-	if "`cutpoints'"=="" & "`cutvalues'"=="" { /***** NQUANTILES *****/
-	if `"`wt'"'!="" & "`altdef'"!="" {
-		di as error "altdef option cannot be used with weights"
-		exit 198
-	}
-
-	if `randn'!=-1 {
-		if `randcut'!=1 {
-			di as error "cannot specify both randcut() and randn()"
-			exit 198
-		}
-		else if `randn'<1 {
-			di as error "randn() must be a positive integer"
-			exit 198
-		}
-		else if `randn'>`popsize' {
-			di as text "randn() is larger than the population. using the full population."
-			local randvar=""
+		* Mark observations used to calculate quantile boundaries
+		if ("`randvar'"!="") {
+			tempvar randsample
+			mark `randsample' `wt' if `touse' & `randvar'<=`randcut'
 		}
 		else {
-			local randcut=`randn'/`popsize'
-
-			if "`randvar'"!="" {
-				qui sum `randvar', meanonly
-				if r(min)<0 | r(max)>1 {
-					di as error "with randn(), the randvar specified must be in [0,1] and ought to be uniformly distributed"
-					exit 198
-				}
-			}
+			local randsample `touse'
 		}
-	}
 
-	* Check if need to gen a temporary uniform random var
-	if "`randvar'"=="" {
-		if (`randcut'<1 & `randcut'>0) { 
-			tempvar randvar
-			gen `randvar'=runiform()
-		}
-		* randcut sanity check
-		else if `randcut'!=1 {
-			di as error "if randcut() is specified without randvar(), a uniform r.v. will be generated and randcut() must be in (0,1)"
+		* Error checks
+		qui count if `randsample'
+		local samplesize=r(N)
+
+		if (`nquantiles' > r(N) + 1) {
+			if ("`randvar'"=="") di as error "nquantiles() must be less than or equal to the number of observations [`r(N)'] plus one"
+			else di as error "nquantiles() must be less than or equal to the number of sampled observations [`r(N)'] plus one"
 			exit 198
 		}
+		else if (`nquantiles' < 2) {
+			di as error "nquantiles() must be greater than or equal to 2"
+			exit 198
+		}
+
+		* Compute quantile boundaries
+		_pctile `exp' if `randsample' `wt', nq(`nquantiles') `altdef'
+
+		* Store quantile boundaries in list
+		forvalues i=1/`=`nquantiles'-1' {
+			local cutvallist `cutvallist' r(r`i')
+		}
+	}
+	else if "`cutpoints'"!="" { /***** CUTPOINTS *****/
+
+	* Parameter checks
+	if "`cutvalues'"!="" {
+		di as error "cannot specify both cutpoints() and cutvalues()"
+		exit 198
+	}		
+	if "`wt'"!="" | "`randvar'"!="" | "`ALTdef'"!="" | `randcut'!=1 | `nquantiles'!=2 | `randn'!=-1 {
+		di as error "cutpoints() cannot be used with nquantiles(), altdef, randvar(), randcut(), randn() or weights"
+		exit 198
 	}
 
-	* Mark observations used to calculate quantile boundaries
-	if ("`randvar'"!="") {
-		tempvar randsample
-		mark `randsample' `wt' if `touse' & `randvar'<=`randcut'
+	tempname cutvals
+	qui tab `cutpoints', matrow(`cutvals')
+
+	if r(r)==0 {
+		di as error "cutpoints() all missing"
+		exit 2000
 	}
 	else {
-		local randsample `touse'
+		local nquantiles = r(r) + 1
+
+		forvalues i=1/`r(r)' {
+			local cutvallist `cutvallist' `cutvals'[`i',1]
+		}
 	}
-
-	* Error checks
-	qui count if `randsample'
-	local samplesize=r(N)
-
-	if (`nquantiles' > r(N) + 1) {
-		if ("`randvar'"=="") di as error "nquantiles() must be less than or equal to the number of observations [`r(N)'] plus one"
-		else di as error "nquantiles() must be less than or equal to the number of sampled observations [`r(N)'] plus one"
-		exit 198
-	}
-	else if (`nquantiles' < 2) {
-		di as error "nquantiles() must be greater than or equal to 2"
-		exit 198
-	}
-
-	* Compute quantile boundaries
-	_pctile `exp' if `randsample' `wt', nq(`nquantiles') `altdef'
-
-	* Store quantile boundaries in list
-	forvalues i=1/`=`nquantiles'-1' {
-		local cutvallist `cutvallist' r(r`i')
-	}
-}
-else if "`cutpoints'"!="" { /***** CUTPOINTS *****/
-
-* Parameter checks
-if "`cutvalues'"!="" {
-	di as error "cannot specify both cutpoints() and cutvalues()"
-	exit 198
-}		
-if "`wt'"!="" | "`randvar'"!="" | "`ALTdef'"!="" | `randcut'!=1 | `nquantiles'!=2 | `randn'!=-1 {
-	di as error "cutpoints() cannot be used with nquantiles(), altdef, randvar(), randcut(), randn() or weights"
-	exit 198
-}
-
-tempname cutvals
-qui tab `cutpoints', matrow(`cutvals')
-
-if r(r)==0 {
-	di as error "cutpoints() all missing"
-	exit 2000
-}
-else {
-	local nquantiles = r(r) + 1
-
-	forvalues i=1/`r(r)' {
-		local cutvallist `cutvallist' `cutvals'[`i',1]
-	}
-}
 }
 else { /***** CUTVALUES *****/
 if "`wt'"!="" | "`randvar'"!="" | "`ALTdef'"!="" | `randcut'!=1 | `nquantiles'!=2 | `randn'!=-1 {
@@ -1119,5 +1165,5 @@ mata:
 		st_matrix("r(boundaries)",boundaries[1..Nunique,.])
 
 	}
-
 end
+

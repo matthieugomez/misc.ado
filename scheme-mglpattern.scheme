@@ -6,7 +6,8 @@ color background             white
 color plotregion             white
 color matrix_plotregion      white
 color legend                 white
-
+color legend_line 			 none
+linewidth legend_line 		 none 
 
 // linewidth
 linewidth p                  thin
@@ -54,38 +55,38 @@ linewidth p14bar             thin
 linewidth p15bar             thin
 
 
-// line pattern
-// linepattern p1lineplot  solid
-// linepattern p2lineplot  dash
-// linepattern p3lineplot  vshortdash
-// linepattern p4lineplot  longdash
-// linepattern p5lineplot  longdash_dot
-// linepattern p6lineplot  dash_dot
-// linepattern p7lineplot  dot
-// linepattern p8lineplot  shortdash_dot
-// linepattern p9lineplot  tight_dot
-// linepattern p10lineplot dash_dot_dot
-// linepattern p11lineplot longdash_shortdash
-// linepattern p12lineplot dash_3dot
-// linepattern p13lineplot longdash_dot_dot
-// linepattern p14lineplot shortdash_dot_dot
-// linepattern p15lineplot longdash_3dot
-// 
-// linepattern p1line  solid
-// linepattern p2line  dash
-// linepattern p3line  vshortdash
-// linepattern p4line  longdash
-// linepattern p5line  longdash_dot
-// linepattern p6line  dash_dot
-// linepattern p7line  dot
-// linepattern p8line  shortdash_dot
-// linepattern p9line  tight_dot
-// linepattern p10line dash_dot_dot
-// linepattern p11line longdash_shortdash
-// linepattern p12line dash_3dot
-// linepattern p13line longdash_dot_dot
-// linepattern p14line shortdash_dot_dot
-// linepattern p15line longdash_3dot
+line pattern
+linepattern p1lineplot  solid
+linepattern p2lineplot  dash
+linepattern p3lineplot  vshortdash
+linepattern p4lineplot  longdash
+linepattern p5lineplot  longdash_dot
+linepattern p6lineplot  dash_dot
+linepattern p7lineplot  dot
+linepattern p8lineplot  shortdash_dot
+linepattern p9lineplot  tight_dot
+linepattern p10lineplot dash_dot_dot
+linepattern p11lineplot longdash_shortdash
+linepattern p12lineplot dash_3dot
+linepattern p13lineplot longdash_dot_dot
+linepattern p14lineplot shortdash_dot_dot
+linepattern p15lineplot longdash_3dot
+
+linepattern p1line  solid
+linepattern p2line  dash
+linepattern p3line  vshortdash
+linepattern p4line  longdash
+linepattern p5line  longdash_dot
+linepattern p6line  dash_dot
+linepattern p7line  dot
+linepattern p8line  shortdash_dot
+linepattern p9line  tight_dot
+linepattern p10line dash_dot_dot
+linepattern p11line longdash_shortdash
+linepattern p12line dash_3dot
+linepattern p13line longdash_dot_dot
+linepattern p14line shortdash_dot_dot
+linepattern p15line longdash_3dot
 
 // symbol pattern
 // symbol p1     circle
@@ -140,9 +141,6 @@ anglestyle vertical_tick     horizontal
 * gsize legend_key_ysize modifies size of key's symbol.  In case of scatter symbol, only ysize 
 gsize legend_key_ysize      6
 gsize legend_key_xsize      6
-color legend_line 			black
-linewidth legend		vvthin
-
 
 // other 
 intensity histogram          50
