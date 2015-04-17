@@ -5,6 +5,7 @@ by(varname) ///
 Palette(string) Colors(string) MColors(string) LColors(string) MSymbols(string) LPatterns(string)  * ]
 
 marksample touse
+markout `touse' `by'
 qui count if `touse'
 local samplesize=r(N)
 local touse_first=_N-`samplesize'+1
@@ -12,6 +13,15 @@ local touse_last=_N
 tempvar bylength
 bys `touse' `by' : gen `bylength' = _N 
 local start = `touse_first'
+
+
+if regexm("`anything'", "^\((.*)\)$"){
+    local anything `=regexs(1)'
+    if regexm("`anything'", "^(.*)\,(.*)$"){
+        local anything `=regexs(1)'
+        local graph_option `=regexs(2)'
+    }
+}
 
 
 
@@ -92,14 +102,14 @@ local color1 `: word 1 of `colors''
 local color2 `: word 2 of `colors''
 if `"`mcolors'"'=="" {
   if regexm("`aesthetics'","mcolor"){
-        local mcolors `"`colors'"'
-    }
-    else{
-        local aesthetics `aesthetics' mcolor
-        local mcolors `color1' `color1' `color1' `color1' `color1' `color1' `color1' ///
-        `color1' `color1' `color1' `color1' `color1' `color1' `color1' `color1' ///
-        `color1' `color1' `color1' `color1' `color1' `color1' `color1' `color1'
-    }
+    local mcolors `"`colors'"'
+}
+else{
+    local aesthetics `aesthetics' mcolor
+    local mcolors `color1' `color1' `color1' `color1' `color1' `color1' `color1' ///
+    `color1' `color1' `color1' `color1' `color1' `color1' `color1' `color1' ///
+    `color1' `color1' `color1' `color1' `color1' `color1' `color1' `color1'
+}
 }
 
 if `"`lcolors'"'=="" {
@@ -116,7 +126,7 @@ if `"`lcolors'"'=="" {
 
 if `"`lpatterns'"'=="" {
     if regexm("`aesthetics'","lpattern"){
-        local lpatterns solid dash vshortdash longdash longdash_dot dash_dot dot shortdash_dot tight_dot dash_dot_dot longdash_shortdash dash_3dot longdash_dot_dot shortdash_dot_dot longdash_3dot
+        local lpatterns solid dash vshortdash longdash longdash_dot shortdash_dot dash_dot_dot longdash_shortdash dash_dot  dash_3dot longdash_dot_dot shortdash_dot_dot longdash_3dot dot tight_dot
     }
     else{
         local aesthetics `aesthetics' lpattern
@@ -168,17 +178,13 @@ while `start' <= `touse_last'{
         }
         local byvalname `=subinstr(`"`byvalname'"',",","",1)'
     }
-    local scatter_options legend(label(`i'  `byvalname')) 
+    local graph_option`i' `graph_option' legend(label(`i'  `byvalname')) 
     foreach a in `aesthetics' {
-        local scatter_option `a'(`"`:word `i' of ``a's''"')
-        local scatter_options `scatter_options' `scatter_option'
+        local graph_option`i' `graph_option`i''  `a'(`"`:word `i' of ``a's''"')
     }
-    local script `script' (`anything' in `start'/`end', `scatter_options')
+    local script `script' (`anything' in `start'/`end', `graph_option`i'')
     local start = `end' + 1
-
 }
-
-
 
 twoway `script',  `bylegend'  `options'
 end

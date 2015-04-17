@@ -559,7 +559,7 @@ if `"`lcolors'"'=="" {
 
 if `"`lpatterns'"'=="" {
 	if regexm("`aesthetics'","lpattern"){
-		local lpatterns `"solid dash vshortdash longdash longdash_dot dash_dot dot shortdash_dot tight_dot dash_dot_dot longdash_shortdash dash_3dot longdash_dot_dot shortdash_dot_dot longdash_3dot"'
+		local lpatterns `"solid dash vshortdash longdash longdash_dot shortdash_dot dash_dot_dot longdash_shortdash dash_dot  dash_3dot longdash_dot_dot shortdash_dot_dot longdash_3dot dot tight_dot"'
 	}
 	else{
 		local aesthetics `aesthetics' lpattern
