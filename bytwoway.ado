@@ -2,8 +2,9 @@ program bytwoway
 syntax anything [if] [in], /// 
 by(varname) ///
 [AESthetics(string) ///
-Palette(string) Colors(string) MColors(string) LColors(string) MSymbols(string) LPatterns(string)  * ]
+Palette(string) Colors(string) MColors(string) LColors(string) MSymbols(string) LPatterns(string) each(string) *]
 
+local sortedby `:sortedby'
 marksample touse
 markout `touse' `by'
 qui count if `touse'
@@ -147,7 +148,7 @@ if `"`msymbols'"'=="" {
 
 
 tempvar bylength
-bys `touse' `by' : gen `bylength' = _N 
+bys `touse' `by' (`=subinstr("`sortedby'","`by'", "", 1)'): gen `bylength' = _N 
 local start = `touse_first'
 local i = 0
 while `start' <= `touse_last'{
@@ -178,7 +179,7 @@ while `start' <= `touse_last'{
         }
         local byvalname `=subinstr(`"`byvalname'"',",","",1)'
     }
-    local graph_option`i' `graph_option' legend(label(`i'  `byvalname')) 
+    local graph_option`i' `graph_option' legend(label(`i'  `byvalname')) `each'
     foreach a in `aesthetics' {
         local graph_option`i' `graph_option`i''  `a'(`"`:word `i' of ``a's''"')
     }
