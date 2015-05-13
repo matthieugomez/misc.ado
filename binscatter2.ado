@@ -537,9 +537,7 @@ if `"`mcolors'"'=="" {
 	}
 	else{
 		local aesthetics `aesthetics' mcolor
-		local mcolors `"`color1' `color1' `color1' `color1' `color1' `color1' `color1' ///
-		`color1' `color1' `color1' `color1' `color1' `color1' `color1' `color1' ///
-		`color1' `color1' `color1' `color1' `color1' `color1' `color1' `color1'"'
+		local mcolors `"`color1' `color1' `color1' `color1' `color1' `color1' `color1' `color1' `color1' `color1' `color1' `color1' `color1' `color1' `color1' `color1' `color1' `color1' `color1' `color1' `color1' `color1' `color1'"'
 	}
 }
 if `"`lcolors'"'=="" {
@@ -551,9 +549,7 @@ if `"`lcolors'"'=="" {
 	}
 	else{
 		local aesthetics `aesthetics' lcolor
-		local lcolors `"`color1' `color1' `color1' `color1' `color1' `color1' `color1' ///
-		`color1' `color1' `color1' `color1' `color1' `color1' `color1' `color1' ///
-		`color1' `color1' `color1' `color1' `color1' `color1' `color1' `color1'"'
+		local lcolors `"`color1' `color1' `color1' `color1' `color1' `color1' `color1' `color1' `color1' `color1' `color1' `color1' `color1' `color1' `color1' `color1' `color1' `color1' `color1' `color1' `color1' `color1' `color1'"'
 	}
 }
 
