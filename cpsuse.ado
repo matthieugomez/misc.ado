@@ -4,20 +4,26 @@ program define cpsuse
 
   quietly{
     local dir `c(pwd)'
+
     local file `0'
     local file: list clean file
-
     if regexm(`"`file'"',`"^(.+)/([^/\.]+)(.*)$"'){
       local directory = regexs(1)
       local filename = regexs(2)
       local filetype= regexs(3)
     }
     else if regexm(`"`file'"',`"^/*([^/\.]+)(.*)$"'){
-        local directory `c(pwd)'
-        local filename = regexs(1) 
-        local filetype = regexs(2)
+      local directory `c(pwd)'
+      local filename = regexs(1) 
+      local filetype = regexs(2)
     }
 
+    cap confirm file `directory'/`filename'.dat.gz
+    if _rc{
+        display as error "file `directory'/`filename'.dat.gz not found"
+        exit 4
+      }
+    
     cd `directory'/
     qui !unpigz -p4 -c "`filename'.dat.gz" >  "`filename'.dat"
     do `filename'.do
