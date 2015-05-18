@@ -2,17 +2,17 @@ program bytwoway
 syntax anything [if] [in], /// 
 by(varname) ///
 [AESthetics(string) ///
-Palette(string) Colors(string) MColors(string) LColors(string) MSymbols(string) LPatterns(string) each(string) *]
+Palette(string) Colors(string) MColors(string) LColors(string) MSymbols(string) LPatterns(string)*]
 
 local sortedby `:sortedby'
 marksample touse
-markout `touse' `by'
+markout `touse' `by', strok
 qui count if `touse'
 local samplesize=r(N)
 local touse_first=_N-`samplesize'+1
 local touse_last=_N
 tempvar bylength
-bys `touse' `by' : gen `bylength' = _N 
+bys `touse' `by' (`=subinstr("`sortedby'","`by'", "", 1)'): gen `bylength' = _N 
 local start = `touse_first'
 
 
@@ -45,9 +45,15 @@ if `byn' > 1{
     local bylegend ""
 }
 else{
+    local byname `: var label `by''
+    if `"`byname'"' == ""{
+        local byname `by'
+    }
+    local bylegend legend(subtitle(`"`byname'"'))
     capture confirm numeric variable `by'
     if _rc {
         * by-variable is string => generate a numeric version
+        local byvarname `by'
         tempvar by
         tempname bylabel
         egen `by'=group(`byvarname'), lname(`bylabel')
@@ -55,11 +61,6 @@ else{
     else{
         local bylabel `:value label `by''
     }
-    local byname `: var label `by''
-    if `"`byname'"' == ""{
-        local byname `by'
-    }
-    local bylegend legend(subtitle(`"`byname'"'))
 }
 tempname byvalmatrix
 qui tab `by' if `touse'==1, nofreq matrow(`byvalmatrix')
@@ -147,9 +148,7 @@ if `"`msymbols'"'=="" {
 }
 
 
-tempvar bylength
-bys `touse' `by' (`=subinstr("`sortedby'","`by'", "", 1)'): gen `bylength' = _N 
-local start = `touse_first'
+
 local i = 0
 while `start' <= `touse_last'{
     local ++i
@@ -179,7 +178,7 @@ while `start' <= `touse_last'{
         }
         local byvalname `=subinstr(`"`byvalname'"',",","",1)'
     }
-    local graph_option`i' `graph_option' legend(label(`i'  `byvalname')) `each'
+    local graph_option`i' `graph_option' legend(label(`i'  `byvalname')) 
     foreach a in `aesthetics' {
         local graph_option`i' `graph_option`i''  `a'(`"`:word `i' of ``a's''"')
     }
