@@ -2,7 +2,8 @@ program bytwoway
 syntax anything [if] [in], /// 
 by(varname) ///
 [AESthetics(string) ///
-Palette(string) Colors(string) MColors(string) LColors(string) MSymbols(string) LPatterns(string)*]
+Palette(string) Colors(string) MColors(string) LColors(string) MSymbols(string) LPatterns(string) legend(string)]
+
 
 local sortedby `:sortedby'
 marksample touse
@@ -178,15 +179,20 @@ while `start' <= `touse_last'{
         }
         local byvalname `=subinstr(`"`byvalname'"',",","",1)'
     }
-    local graph_option`i' `graph_option' legend(label(`i'  `byvalname')) 
+    local graph_option`i' `graph_option' 
     foreach a in `aesthetics' {
         local graph_option`i' `graph_option`i''  `a'(`"`:word `i' of ``a's''"')
+    }
+    if "`legend'" ~= "off"{
+        local graph_option`i' `graph_option' legend(label(`i'  `byvalname')) 
     }
     local script `script' (`anything' in `start'/`end', `graph_option`i'')
     local start = `end' + 1
 }
-
-twoway `script',  `bylegend'  `options'
+if "`legend'" ~= ""{
+    local legend legend(`legend')
+}
+twoway `script',  `bylegend'  `options' `legend'
 end
 
 /***************************************************************************************************
