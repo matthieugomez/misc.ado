@@ -1,27 +1,35 @@
 program define fillall
-syntax [, id(varlist) Time(varlist) full]
-	tempvar gid gtime
-	egen `gid' = group(`id'), missing
-	egen `gtime' = group(`time'), missing
-	tsset `gid' `gtime'
-	tsfill, `full'
-	sort `gid' `id'
-	foreach v of varlist `id'{
-		by `gid': replace `v'= `v'[1] if missing(`v')
+	syntax [, id1(varlist) id2(varlist) GENerate(string)]
+	if "`generate'" ~= ""{
+		confirm new varname `generate'
 	}
-	sort `gtime' `time'
-	foreach v of varlist `time'{
-		by `gtime': replace `v'= `v'[1] if missing(`v')
+	tempvar gid1 gid2
+	egen `gid1' = group(`id1'), missing
+	egen `gid2' = group(`id2'), missing
+	cap ds _fillin
+	if _rc == 0{
+		tempname temp
+		rename _fillin `temp'
+		local rename year
 	}
-	sort `gid' `gtime'
+	fillin `gid1' `gid2'
+	if "`generate'" ~= ""{
+		rename _fillin `gen'
+	}
+	else{
+		drop _fillin
+	}
+	if "`rename'" ~= ""{
+		rename `temp' _fillin
+	}
+	sort `gid1' `id1'
+	foreach v of varlist `id1'{
+		qui by `gid1': replace `v'= `v'[1] if missing(`v')
+	}
+	sort `gid2' `id2'
+	foreach v of varlist `id2'{
+		qui by `gid2': replace `v'= `v'[1] if missing(`v')
+	}
+	sort `id1' `id2'
 end
 
-/* test 
-discard
-clear all
-set obs 10
-gen a = _n
-gen b = _n
-gen time = _n
-fillall , id(a b) time(time) full
-*/

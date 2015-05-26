@@ -8,7 +8,7 @@ discrete Nbin(integer 20) cut(string) min(string) max(string) boundary ///
 linetype(string) cutline(string) ///
 MSize(string) count lncount ///
 AESthetics(string) ///
-palette(string) COLors(string) MColors(string) LColors(string) Msymbols(string) LPatterns(string) ///
+palette(string) COLors(string asis) MColors(string asis) LColors(string asis) Msymbols(string) LPatterns(string) ///
 clean *]
 
 
