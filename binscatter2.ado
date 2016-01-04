@@ -559,18 +559,18 @@ if `"`lpatterns'"'=="" {
 	}
 	else{
 		local aesthetics `aesthetics' lpattern
-		local lpatterns solid solid solid solid solid solid solid solid solid solid solid solid solid solid solid solid solid solid solid solid solid solid solid solid solid solid solid solid 
+		local lpatterns "solid solid solid solid solid solid solid solid solid solid solid solid solid solid solid solid solid solid solid solid solid solid solid solid solid solid solid solid"
 	}
 }
 
 if `"`msymbols'"'=="" {
 	if regexm("`aesthetics'","lpattern"){
-		local msymbols circle diamond square triangle x plus circle_hollow diamond_hollow square_hollow triangle_hollow smcircle smdiamond smsquare smtriangle smx
+		local msymbols "circle diamond square triangle x plus circle_hollow diamond_hollow square_hollow triangle_hollow smcircle smdiamond smsquare smtriangle smx"
 
 	}
 	else{
-		local aesthetics `aesthetics' msymbols
-		local msymbols circle circle circle circle circle circle circle circle circle circle circle circle circle circle circle circle circle circle circle circle circle circle circle circle circle circle circle circle circle 
+		local aesthetics `aesthetics' msymbol
+		local msymbols "circle circle circle circle circle circle circle circle circle circle circle circle circle circle circle circle circle circle circle circle circle circle circle circle circle circle circle circle circle"
 	}
 }
 

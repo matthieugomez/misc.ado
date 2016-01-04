@@ -1,5 +1,6 @@
 program define tsfillall
-	syntax [varlist , full]
+	syntax varlist , [full]
+	/* the first n-1 are id, the last is time */
 	local n : word count `varlist'
 	tokenize `varlist'
 	forval i = 1/`=`n'-1'{
@@ -7,13 +8,18 @@ program define tsfillall
 		macro shift
 	}
 	local time `1'
-	tempvar gid gtime
+
+	/* tsfill */
+	tempvar gid sample
 	egen `gid' = group(`id'), missing
-	qui tsset `gid' `time'
+	tempvar sample
+	gen `sample' == 0
+	qui tsset `gid' `time', `full'
+	qui replace `sample' = 1 if missing(`sample')
 	tsfill, `full'
-	sort `gid' `id'
+	sort `gid' `sample'
 	foreach v of varlist `id'{
-		qui by `gid': replace `v'= `v'[1] if missing(`v')
+		qui by `gid': replace `v' = `v'[1]
 	}
 	sort `id' `time'
 end

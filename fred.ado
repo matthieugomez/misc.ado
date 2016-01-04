@@ -1,42 +1,42 @@
 cap program drop fred
 program define fred
-	syntax anything, key(string) [return Time(string)]
+	syntax anything, key(string) [return]
 	local id = lower("`anything'")
 	tempfile temp
 	splitpath `temp'
 	local tempdirectory `r(directory)'
-	tempfile temp1
-	!curl -o "`temp1'.txt.zip" "http://api.stlouisfed.org/fred/series/observations?&file_type=txt&series_id=`id'&api_key=`key'"
-	!cd `tempdirectory' && unar -D "`temp1'.txt.zip" 
+	local tempfilename `r(filename)'`r(filetype)'
+	copy "https://api.stlouisfed.org/fred/series/observations?&file_type=txt&series_id=`id'&api_key=`key'" "`temp'.zip" 
+	!cd `tempdirectory' && unar -D `tempfilename'.zip
 	insheet using "`tempdirectory'`id'_1.txt", clear
 	gen date = date(observation_date,"YMD")
-	if "`time'"== "d" | "`time'" == ""{
+	format date %td
+	gen datem = mofd(date)
+	format datem %tm
+	cap tsset datem
+	if _rc{
 		local date date
-		format `date' %td
-	}
-	if "`time'"== "m" | "`time'" == ""{
-		local date datem
-		gen `date' = mofd(date)
-		format datem %tm
-		
-	}
-	else if "`time'" == "q"{
-		local date dateq
-		gen `date' = qofd(date)
-		format `date' %tq
-	}
-	else if "`time'" == "y"{
-		local date year
-		gen `date' = year(date)
 	}
 	else{
-		display as error "invalid time period"
-		exit 4
+		gen dateq = qofd(date)
+		format dateq %tq
+		cap tsset dateq
+		if _rc{
+			local date datem
+		}
+		else{
+			gen year = year(date)
+			cap tsset year
+			if _rc{
+				local date dateq
+			}
+			else{
+				local date year
+			}
+		}
 	}
 	order `date' `id'
-	sort `date' `id'
 	keep `date' `id'
-	tsset `date' 
 	if "`return'"~=""{
 		tempvar new 
 		gen `new'= F.`id'/`id'-1

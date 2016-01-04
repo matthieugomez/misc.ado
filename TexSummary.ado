@@ -1,5 +1,5 @@
 program define TexSummary
-syntax anything(name=filepath) [, cname(string) cformat(string) stats(string) rlist(string) rname(string) title(string) notes(string)]
+syntax anything(name=filepath) [, cname(string) cformat(string) stats(string) rlist(string) rname(string) title(string) note(string)]
 
 
 tempfile stat
@@ -54,6 +54,6 @@ replace v0 = subinstr(v0,"%","$\%$",.)
 replace v0 = subinstr(v0,"_","-",.)
 local filename summary
 
-listtab v0 `clist'  using `filepath', rstyle(tabular) replace  head("\begin{table}[htb]\scriptsize\centering \caption{`title'}" "%<*tag>" " \sisetup{group-digits=true,group-separator={,}}\def\sym X 1{\ifmmode^{ X 1}\else\(^{ X 1}\)\fi}" "\label{tab:`filename'}" "\begin{tabularx}{\hsize}{@{\hskip\tabcolsep\extracolsep\fill}l`format_si'}" "\cmidrule{1-`=`n'+1'}\morecmidrules\cmidrule{1-`=`n'+1'}" "Variables `firstrow' \\" "\cmidrule{2-`=`n'+1'}")  foot("\cmidrule{1-`=`n'+1'}\morecmidrules\cmidrule{1-`=`n'+1'}" "%</tag>" "\multicolumn{`=`n'+1'}{l}{\begin{minipage}{\hsize} \rule{0pt}{9pt} \scriptsize `notes'  \end{minipage}}\\"  "\end{tabularx}"  "\end{table}")
+listtab v0 `clist'  using `filepath', rstyle(tabular) replace  head("\begin{table}[htb]\scriptsize\centering \caption{`title'}" "%<*tag>" " \sisetup{group-digits=true,group-separator={,}}\def\sym X 1{\ifmmode^{ X 1}\else\(^{ X 1}\)\fi}" "\label{tab:`filename'}" "\begin{tabularx}{\hsize}{@{\hskip\tabcolsep\extracolsep\fill}l`format_si'}" "\cmidrule{1-`=`n'+1'}\morecmidrules\cmidrule{1-`=`n'+1'}" "Variables `firstrow' \\" "\cmidrule{2-`=`n'+1'}")  foot("\cmidrule{1-`=`n'+1'}\morecmidrules\cmidrule{1-`=`n'+1'}" "%</tag>" "\multicolumn{`=`n'+1'}{l}{\begin{minipage}{\hsize} \rule{0pt}{9pt} \scriptsize `note'  \end{minipage}}\\"  "\end{tabularx}"  "\end{table}")
 restore
 end
