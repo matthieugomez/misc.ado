@@ -22,11 +22,7 @@ b:  Balance sheet
 g: Debt growth--adjusted annual rates
 s: Supplementary
 i : Integrated macroeconomic accounts
-
-
-
-a b g l s u. They don't corredspond to the variable code after f
-
+don't correspond to the second letter of the variable name!
 
 credit is face value, not market value.
 

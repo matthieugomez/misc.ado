@@ -46,7 +46,7 @@ program define zipextract, rclass
 			}
 		}
 		foreach file in `filelist'{
-			copy `tempdirectory'/`file' `in'/`file', replace
+			copy `"`tempdirectory'/`file'"' `"`in'/`file'"', replace
 		}
 		return local files `filelist'
 		foreach i of numlist `nfiles'/1{
