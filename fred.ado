@@ -7,6 +7,11 @@ program define fred
 	local tempdirectory `r(directory)'
 	local tempfilename `r(filename)'`r(filetype)'
 	copy "https://api.stlouisfed.org/fred/series/observations?&file_type=txt&series_id=`id'&api_key=`key'" "`temp'.zip" 
+	di "`temp'"
+	di "`tempdirectory'"
+	di "`tempfilename'"
+
+
 	!cd `tempdirectory' && unar -D `tempfilename'.zip
 	insheet using "`tempdirectory'`id'_1.txt", clear
 	gen date = date(observation_date,"YMD")

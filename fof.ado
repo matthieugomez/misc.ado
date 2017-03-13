@@ -1,4 +1,5 @@
 program define fof
+
 	syntax [anything], [clear]
 
 

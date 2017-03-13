@@ -231,7 +231,7 @@ qui{
 
 
     tempvar varcount
-    bys `touse' `by' `bin': gen `varcount' = sum(`weight2') 
+    bys `touse' `by' `bin': gen `varcount' = sum(`weight1') 
     by `touse' `by' `bin': replace `varcount' = 0 if _n < _N
     if "`lncount'" ~= ""{
         by `stouse' `by' `bin': replace `varcount' = ln(`varcount') if _n == _N
