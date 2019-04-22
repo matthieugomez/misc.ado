@@ -13,6 +13,7 @@ program define fred
 
 
 	!cd `tempdirectory' && unar -D `tempfilename'.zip
+	! sleep 1s
 	insheet using "`tempdirectory'`id'_1.txt", clear
 	gen date = date(observation_date,"YMD")
 	format date %td

@@ -12,6 +12,7 @@ qui{
 		exit 602
 	}
 	graph export "`directory'`filename'.eps", replace
-	shell ps2pdf -dAutoPositionEPSFiles=true -dPreserveEPSInfo=true -dAutoRotatePages=/None -dEPSCrop=true "`directory'`filename'.eps" "`directory'`filename'.pdf" && rm -f "`directory'`filename'.eps"
+	shell /usr/local/bin/ps2pdf -dAutoPositionEPSFiles=true -dPreserveEPSInfo=true  -dEPSCrop=true "`directory'`filename'.eps" "`directory'`filename'.pdf" && rm -f "`directory'`filename'.eps"
+	* before I had -dAutoRotatePages=/None
 }
 end
