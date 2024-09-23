@@ -14,4 +14,3 @@
 
 {pstd}
 {cmd:capkeep} keeps every variable included in {it:varlist}. Contrary to {cmd:keep}, no error is returned if some variable is not in the dataset. 
-

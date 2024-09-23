@@ -43,6 +43,7 @@ program define zipuse
 	cap qui use `vlist' "`tempdirectory'`filename'" `if' `in',`options' `clear' `replace'
 	while _rc {      /* file does not exist! */
 	!unar -f  "`directory'/`filename'.zip" -o "`tempdirectory'" &&
+	di `"`vlist' "`tempdirectory'`filename'" `if' `in',`options' `clear' `replace'"'
 	cap qui use `vlist' "`tempdirectory'`filename'" `if' `in',`options' `clear' `replace'
 	}
 

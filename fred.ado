@@ -6,7 +6,7 @@ program define fred
 	splitpath `temp'
 	local tempdirectory `r(directory)'
 	local tempfilename `r(filename)'`r(filetype)'
-	copy "https://api.stlouisfed.org/fred/series/observations?&file_type=txt&series_id=`id'&api_key=`key'" "`temp'.zip" 
+	copy "https://api.stlouisfed.org/fred/series/observations?&file_type=txt&series_id=`id'&api_key=`key'" "`temp'.zip", replace
 	di "`temp'"
 	di "`tempdirectory'"
 	di "`tempfilename'"

@@ -1,14 +1,7 @@
 program define fof
 
-	syntax [anything], [clear]
+	syntax anything, [clear]
 
-
-	if "`anything'" == ""{
-		local vintage Current
-	}
-	else{
-		local vintage `anything'
-	}
 	tempfile dirdownload
 	!rm -rf "`dirdownload'"
 	mkdir "`dirdownload'"
@@ -46,9 +39,6 @@ program define fof
 		qui ds dateq, not
 		foreach v in `r(varlist)' {
 			qui label variable `v' `"``v''"'
-		}
-		if "`file'" == "all_sectors_assets_a"{
-			x
 		}
 		if `ifile'>2{
 			qui merge 1:1 dateq using `data', nogenerate sorted
